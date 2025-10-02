@@ -1,0 +1,6 @@
+VITE_API_URL=http://localhost:3000
+DATABASE_URL=postgresql://postgres:password@localhost:5432/apppagos
+JWT_SECRET=mi-secreto-super-seguro-para-desarrollo
+VITE_SUPABASE_URL=https://rafmynmmenebreqeagvm.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhZm15bm1tZW5lYnJlcWVhZ3ZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzNTAxNjQsImV4cCI6MjA3NDkyNjE2NH0.lVg3AcX3Ki31GEKoDRdDXxO4sV0Um4a2vjaw2iVOXQE
+
