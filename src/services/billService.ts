@@ -11,30 +11,8 @@ const getAuthHeaders = () => {
   };
 };
 
-const mapDbRowToBill = (row: any): UtilityBill => ({
-  id: row.id,
-  user_id: row.user_id,
-  serviceType: row.service_type as UtilityBill['serviceType'],
-  provider: row.provider || undefined,
-  description: row.description || undefined,
-  value: row.value,
-  period: row.period,
-  invoiceNumber: row.invoice_number || undefined,
-  totalAmount: row.total_amount,
-  consumption: row.consumption || undefined,
-  unitOfMeasure: (row.unit_of_measure as UtilityBill['unitOfMeasure']) || undefined,
-  costCenter: row.cost_center || undefined,
-  location: row.location,
-  dueDate: row.due_date,
-  documentUrl: row.document_url || undefined,
-  documentName: row.document_name || undefined,
-  status: row.status as BillStatus,
-  notes: row.notes || undefined,
-  approvedBy: row.approved_by || undefined,
-  approvedAt: row.approved_at || undefined,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at
-});
+// El backend ya devuelve datos en camelCase correctos, solo casteamos el tipo
+const mapDbRowToBill = (row: any): UtilityBill => row as UtilityBill;
 
 export const billService = {
   async getAll(filters?: FilterOptions): Promise<UtilityBill[]> {
@@ -67,6 +45,7 @@ export const billService = {
     }
 
     const data = await response.json();
+    console.log('📥 Facturas recibidas del backend:', data.length > 0 ? data[0] : 'Sin facturas');
     return data.map(mapDbRowToBill);
   },
 

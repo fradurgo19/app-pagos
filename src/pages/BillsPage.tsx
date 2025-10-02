@@ -7,6 +7,7 @@ import { FilterBar } from '../molecules/FilterBar';
 import { BillsTable } from '../organisms/BillsTable';
 import { useBills } from '../hooks/useBills';
 import { FilterOptions } from '../types';
+import { translateServiceType, translateStatus } from '../utils/formatters';
 
 export const BillsPage: React.FC = () => {
   const [filters, setFilters] = useState<FilterOptions>({
@@ -33,12 +34,12 @@ export const BillsPage: React.FC = () => {
       ['Período', 'Tipo de Servicio', 'Proveedor', 'Monto', 'Fecha de Vencimiento', 'Ubicación', 'Estado', 'Número de Factura'],
       ...bills.map(bill => [
         bill.period,
-        bill.serviceType,
+        translateServiceType(bill.serviceType),
         bill.provider || '',
         bill.totalAmount.toString(),
         bill.dueDate.toString(),
         bill.location,
-        bill.status,
+        translateStatus(bill.status),
         bill.invoiceNumber || ''
       ])
     ].map(row => row.join(',')).join('\n');

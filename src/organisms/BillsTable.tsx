@@ -3,9 +3,10 @@ import { ArrowUpDown, Eye, Trash2, Download, Check } from 'lucide-react';
 import { UtilityBill, SortState } from '../types';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
-import { formatCurrency, formatDate } from '../utils/formatters';
+import { formatCurrency, formatDate, translateServiceType } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import { billService } from '../services/billService';
+import { BillDetailsModal } from '../molecules/BillDetailsModal';
 
 interface BillsTableProps {
   bills: UtilityBill[];
@@ -18,8 +19,15 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
   const [sortState, setSortState] = useState<SortState>({ column: 'createdAt', direction: 'desc' });
   const [selectedBills, setSelectedBills] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string | null>(null);
+  const [viewingBill, setViewingBill] = useState<UtilityBill | null>(null);
 
   const isAreaCoordinator = profile?.role === 'area_coordinator';
+  
+  // Debug: Ver las facturas recibidas
+  if (bills.length > 0) {
+    console.log('🔍 Primera factura en tabla:', bills[0]);
+    console.log('🔍 dueDate de primera factura:', bills[0].dueDate);
+  }
 
   const handleSort = (column: keyof UtilityBill) => {
     setSortState(prev => ({
@@ -107,8 +115,16 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
   );
 
   return (
-    <div className="space-y-4">
-      {selectedBills.size > 0 && (
+    <>
+      {viewingBill && (
+        <BillDetailsModal
+          bill={viewingBill}
+          onClose={() => setViewingBill(null)}
+        />
+      )}
+      
+      <div className="space-y-4">
+        {selectedBills.size > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
           <span className="text-sm text-blue-900">
             {selectedBills.size} factura{selectedBills.size > 1 ? 's' : ''} seleccionada{selectedBills.size > 1 ? 's' : ''}
@@ -196,8 +212,8 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                     {bill.period}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 capitalize">
-                    {bill.serviceType}
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {translateServiceType(bill.serviceType)}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                     {bill.provider || '-'}
@@ -227,18 +243,22 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                         </button>
                       )}
                       <button
+                        onClick={() => setViewingBill(bill)}
                         className="text-blue-600 hover:text-blue-900"
                         aria-label="Ver detalles de factura"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       {bill.documentUrl && (
-                        <button
+                        <a
+                          href={bill.documentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="text-gray-600 hover:text-gray-900"
                           aria-label="Descargar documento"
                         >
                           <Download className="w-4 h-4" />
-                        </button>
+                        </a>
                       )}
                       {bill.status === 'draft' && (
                         <button
@@ -259,5 +279,6 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
         </table>
       </div>
     </div>
+    </>
   );
 };

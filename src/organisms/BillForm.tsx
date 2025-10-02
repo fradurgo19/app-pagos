@@ -84,6 +84,33 @@ export const BillForm: React.FC = () => {
     setLoading(true);
 
     try {
+      let documentUrl = '';
+      let documentName = '';
+
+      // Subir archivo si existe
+      if (formData.attachedDocument) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', formData.attachedDocument);
+
+        const token = localStorage.getItem('auth_token');
+        const uploadResponse = await fetch('http://localhost:3000/api/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: uploadFormData
+        });
+
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          documentUrl = uploadData.url;
+          documentName = uploadData.filename;
+          console.log('✅ Archivo subido:', documentUrl);
+        } else {
+          throw new Error('Error al subir el archivo');
+        }
+      }
+
       const billData = {
         serviceType: formData.serviceType as ServiceType,
         provider: formData.provider,
@@ -97,6 +124,8 @@ export const BillForm: React.FC = () => {
         costCenter: formData.costCenter,
         location: formData.location,
         dueDate: formData.dueDate,
+        documentUrl: documentUrl || undefined,
+        documentName: documentName || undefined,
         status: isDraft ? 'draft' : 'pending',
         notes: formData.notes
       };

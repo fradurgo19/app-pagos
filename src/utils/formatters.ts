@@ -1,28 +1,48 @@
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value);
+export const formatCurrency = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return '$ 0';
+  
+  try {
+    // Formatear manualmente para mayor compatibilidad
+    const formatted = value.toLocaleString('es-CO', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+    return `$ ${formatted}`;
+  } catch (error) {
+    console.error('Error formateando moneda:', error);
+    // Fallback: formateo manual
+    return `$ ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+  }
 };
 
-export const formatDate = (date: Date | string): string => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateFormat('es-ES', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(d);
+export const formatDate = (date: Date | string | null | undefined): string => {
+  if (!date) return '-';
+  
+  try {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    
+    // Verificar que la fecha es válida
+    if (isNaN(d.getTime())) return '-';
+    
+    // Usar toLocaleDateString en lugar de Intl.DateFormat
+    return d.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (error) {
+    console.error('Error formateando fecha:', error);
+    return '-';
+  }
 };
 
 export const formatPeriod = (period: string): string => {
   const [year, month] = period.split('-');
   const date = new Date(parseInt(year), parseInt(month) - 1);
-  return new Intl.DateFormat('es-ES', {
+  return date.toLocaleDateString('es-ES', {
     year: 'numeric',
     month: 'long'
-  }).format(date);
+  });
 };
 
 export const parseCurrencyInput = (value: string): number => {
@@ -52,12 +72,49 @@ export const getPreviousPeriod = (period: string): string => {
 
 export const getMonthName = (monthNumber: number): string => {
   const date = new Date(2000, monthNumber - 1);
-  return new Intl.DateFormat('es-ES', { month: 'long' }).format(date);
+  return date.toLocaleDateString('es-ES', { month: 'long' });
 };
 
-export const isOverdue = (dueDate: Date | string): boolean => {
-  const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return due < today;
+export const isOverdue = (dueDate: Date | string | null | undefined): boolean => {
+  if (!dueDate) return false;
+  
+  try {
+    const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
+    if (isNaN(due.getTime())) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return due < today;
+  } catch (error) {
+    return false;
+  }
+};
+
+// Traducir tipos de servicio a español
+export const translateServiceType = (serviceType: string): string => {
+  const translations: Record<string, string> = {
+    'electricity': 'Electricidad',
+    'water': 'Agua',
+    'gas': 'Gas',
+    'internet': 'Internet',
+    'phone': 'Teléfono',
+    'waste': 'Basuras',
+    'sewer': 'Alcantarillado',
+    'other': 'Otro'
+  };
+  
+  return translations[serviceType] || serviceType;
+};
+
+// Traducir estados a español
+export const translateStatus = (status: string): string => {
+  const translations: Record<string, string> = {
+    'draft': 'Borrador',
+    'pending': 'Pendiente',
+    'approved': 'Aprobado',
+    'overdue': 'Vencido',
+    'paid': 'Pagado'
+  };
+  
+  return translations[status] || status;
 };

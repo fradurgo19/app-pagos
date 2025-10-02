@@ -3,8 +3,23 @@ import cors from 'cors';
 import pg from 'pg';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 dotenv.config();
+
+// Para ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Crear directorio de uploads si no existe
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('📁 Directorio de uploads creado');
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +28,40 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Servir archivos estáticos (uploads)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Configurar Multer para upload de archivos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    // Generar nombre único: timestamp-uuid-filename
+    const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.originalname}`;
+    cb(null, uniqueName);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Aceptar solo PDF, JPG, PNG
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+  
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Tipo de archivo no permitido. Solo PDF, JPG y PNG.'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB máximo
+  }
+});
+
 // Configuración de PostgreSQL
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL
@@ -20,6 +69,32 @@ const pool = new pg.Pool({
 
 // Secret para JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secret-key-muy-seguro-cambiar-en-produccion';
+
+// Función para convertir snake_case a camelCase
+const transformBillToFrontend = (row) => ({
+  id: row.id,
+  user_id: row.user_id,
+  serviceType: row.service_type,
+  provider: row.provider,
+  description: row.description,
+  value: parseFloat(row.value) || 0,
+  period: row.period,
+  invoiceNumber: row.invoice_number,
+  totalAmount: parseFloat(row.total_amount) || 0,
+  consumption: row.consumption ? parseFloat(row.consumption) : null,
+  unitOfMeasure: row.unit_of_measure,
+  costCenter: row.cost_center,
+  location: row.location,
+  dueDate: row.due_date,  // ← IMPORTANTE: Convertir a camelCase
+  documentUrl: row.document_url,
+  documentName: row.document_name,
+  status: row.status,
+  notes: row.notes,
+  approvedBy: row.approved_by,
+  approvedAt: row.approved_at,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at
+});
 
 // Middleware de autenticación
 const authenticateToken = (req, res, next) => {
@@ -259,7 +334,15 @@ app.get('/api/bills', authenticateToken, async (req, res) => {
     query += ' ORDER BY created_at DESC';
 
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    
+    // Transformar datos a camelCase para el frontend
+    const transformedBills = result.rows.map(transformBillToFrontend);
+    
+    if (transformedBills.length > 0) {
+      console.log('📤 Primera factura transformada:', JSON.stringify(transformedBills[0], null, 2));
+    }
+    
+    res.json(transformedBills);
 
   } catch (error) {
     console.error('Error al obtener facturas:', error);
@@ -280,7 +363,7 @@ app.get('/api/bills/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Factura no encontrada' });
     }
 
-    res.json(result.rows[0]);
+    res.json(transformBillToFrontend(result.rows[0]));
   } catch (error) {
     console.error('Error al obtener factura:', error);
     res.status(500).json({ error: 'Error al obtener factura' });
@@ -292,6 +375,30 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
   try {
     const bill = req.body;
 
+    console.log('📝 Datos recibidos para crear factura:', JSON.stringify(bill, null, 2));
+
+    // Normalizar datos (soportar camelCase y snake_case)
+    const normalizedBill = {
+      serviceType: bill.serviceType || bill.service_type,
+      provider: bill.provider,
+      description: bill.description,
+      value: bill.value,
+      period: bill.period,
+      invoiceNumber: bill.invoiceNumber || bill.invoice_number,
+      totalAmount: bill.totalAmount || bill.total_amount,
+      consumption: bill.consumption,
+      unitOfMeasure: bill.unitOfMeasure || bill.unit_of_measure,
+      costCenter: bill.costCenter || bill.cost_center,
+      location: bill.location,
+      dueDate: bill.dueDate || bill.due_date,
+      documentUrl: bill.documentUrl || bill.document_url,
+      documentName: bill.documentName || bill.document_name,
+      status: bill.status || 'draft',
+      notes: bill.notes
+    };
+
+    console.log('📝 Datos normalizados:', JSON.stringify(normalizedBill, null, 2));
+
     const result = await pool.query(
       `INSERT INTO utility_bills (
         user_id, service_type, provider, description, value, period,
@@ -302,29 +409,35 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
       RETURNING *`,
       [
         req.user.id,
-        bill.serviceType,
-        bill.provider,
-        bill.description,
-        bill.value,
-        bill.period,
-        bill.invoiceNumber,
-        bill.totalAmount,
-        bill.consumption,
-        bill.unitOfMeasure,
-        bill.costCenter,
-        bill.location,
-        bill.dueDate,
-        bill.documentUrl,
-        bill.documentName,
-        bill.status || 'draft',
-        bill.notes
+        normalizedBill.serviceType,
+        normalizedBill.provider,
+        normalizedBill.description,
+        normalizedBill.value,
+        normalizedBill.period,
+        normalizedBill.invoiceNumber,
+        normalizedBill.totalAmount,
+        normalizedBill.consumption,
+        normalizedBill.unitOfMeasure,
+        normalizedBill.costCenter,
+        normalizedBill.location,
+        normalizedBill.dueDate,
+        normalizedBill.documentUrl,
+        normalizedBill.documentName,
+        normalizedBill.status,
+        normalizedBill.notes
       ]
     );
 
-    res.status(201).json(result.rows[0]);
+    console.log('✅ Factura creada en BD:', JSON.stringify(result.rows[0], null, 2));
+    
+    // Transformar a camelCase antes de enviar al frontend
+    const transformedBill = transformBillToFrontend(result.rows[0]);
+    console.log('📤 Factura transformada para frontend:', JSON.stringify(transformedBill, null, 2));
+    
+    res.status(201).json(transformedBill);
   } catch (error) {
-    console.error('Error al crear factura:', error);
-    res.status(500).json({ error: 'Error al crear factura' });
+    console.error('❌ Error al crear factura:', error);
+    res.status(500).json({ error: 'Error al crear factura: ' + error.message });
   }
 });
 
@@ -384,7 +497,7 @@ app.put('/api/bills/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Factura no encontrada' });
     }
 
-    res.json(result.rows[0]);
+    res.json(transformBillToFrontend(result.rows[0]));
   } catch (error) {
     console.error('Error al actualizar factura:', error);
     res.status(500).json({ error: 'Error al actualizar factura' });
@@ -436,6 +549,52 @@ app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
   }
 });
 
+// Upload de archivo
+app.post('/api/upload', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se proporcionó ningún archivo' });
+    }
+
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    
+    console.log('📎 Archivo subido:', {
+      originalName: req.file.originalname,
+      filename: req.file.filename,
+      size: req.file.size,
+      url: fileUrl
+    });
+
+    res.json({
+      url: fileUrl,
+      filename: req.file.originalname,
+      size: req.file.size
+    });
+  } catch (error) {
+    console.error('Error al subir archivo:', error);
+    res.status(500).json({ error: 'Error al subir archivo: ' + error.message });
+  }
+});
+
+// Descargar archivo
+app.get('/api/download/:filename', authenticateToken, (req, res) => {
+  try {
+    const { filename } = req.params;
+    const filePath = path.join(uploadsDir, filename);
+
+    // Verificar que el archivo existe
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Archivo no encontrado' });
+    }
+
+    // Enviar archivo
+    res.download(filePath);
+  } catch (error) {
+    console.error('Error al descargar archivo:', error);
+    res.status(500).json({ error: 'Error al descargar archivo' });
+  }
+});
+
 // Aprobar factura (solo coordinadores)
 app.post('/api/bills/:id/approve', authenticateToken, async (req, res) => {
   try {
@@ -465,7 +624,7 @@ app.post('/api/bills/:id/approve', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Factura no encontrada' });
     }
 
-    res.json(result.rows[0]);
+    res.json(transformBillToFrontend(result.rows[0]));
   } catch (error) {
     console.error('Error al aprobar factura:', error);
     res.status(500).json({ error: 'Error al aprobar factura' });
@@ -491,6 +650,30 @@ app.get('/api/health', async (req, res) => {
       database: 'disconnected',
       error: error.message 
     });
+  }
+});
+
+// Endpoint de debug - ver facturas raw
+app.get('/api/debug/bills', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM utility_bills WHERE user_id = $1 ORDER BY created_at DESC LIMIT 3',
+      [req.user.id]
+    );
+    
+    const raw = result.rows;
+    const transformed = result.rows.map(transformBillToFrontend);
+    
+    res.json({
+      raw: raw,
+      transformed: transformed,
+      comparison: {
+        raw_due_date: raw[0]?.due_date,
+        transformed_dueDate: transformed[0]?.dueDate
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
