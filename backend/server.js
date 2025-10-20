@@ -7,6 +7,8 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { sendNewBillNotification, verifyEmailConfig } from './emailService.js';
+import { uploadToSupabase } from './supabaseClient.js';
 
 dotenv.config();
 
@@ -31,17 +33,8 @@ app.use(express.json());
 // Servir archivos estáticos (uploads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Configurar Multer para upload de archivos
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    // Generar nombre único: timestamp-uuid-filename
-    const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(7)}-${file.originalname}`;
-    cb(null, uniqueName);
-  }
-});
+// Configurar Multer para upload de archivos en memoria (para Supabase)
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   // Aceptar solo PDF, JPG, PNG
@@ -434,6 +427,34 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
     const transformedBill = transformBillToFrontend(result.rows[0]);
     console.log('📤 Factura transformada para frontend:', JSON.stringify(transformedBill, null, 2));
     
+    // Enviar notificación por correo (no bloqueante)
+    // Obtener datos del usuario que creó la factura
+    const userResult = await pool.query(
+      'SELECT email, full_name FROM profiles WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userResult.rows.length > 0) {
+      const userEmail = userResult.rows[0].email;
+      const userName = userResult.rows[0].full_name;
+
+      // Preparar URL del archivo adjunto si existe (Supabase)
+      let attachmentPath = normalizedBill.documentUrl || null;
+
+      // Enviar correo de forma asíncrona (no bloquea la respuesta)
+      sendNewBillNotification(transformedBill, userEmail, userName, attachmentPath)
+        .then(result => {
+          if (result.success) {
+            console.log(`📧 Correo enviado a fherrera@partequipos.com y ${userEmail}`);
+          } else {
+            console.error('❌ Error al enviar correo:', result.error);
+          }
+        })
+        .catch(error => {
+          console.error('❌ Error al enviar correo:', error);
+        });
+    }
+    
     res.status(201).json(transformedBill);
   } catch (error) {
     console.error('❌ Error al crear factura:', error);
@@ -556,19 +577,20 @@ app.post('/api/upload', authenticateToken, upload.single('file'), async (req, re
       return res.status(400).json({ error: 'No se proporcionó ningún archivo' });
     }
 
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    // Subir a Supabase Storage
+    const result = await uploadToSupabase(req.file, req.user.id);
     
-    console.log('📎 Archivo subido:', {
+    console.log('📎 Archivo subido a Supabase:', {
       originalName: req.file.originalname,
-      filename: req.file.filename,
-      size: req.file.size,
-      url: fileUrl
+      url: result.url,
+      size: req.file.size
     });
 
     res.json({
-      url: fileUrl,
-      filename: req.file.originalname,
-      size: req.file.size
+      url: result.url,
+      filename: result.filename,
+      size: req.file.size,
+      path: result.path
     });
   } catch (error) {
     console.error('Error al subir archivo:', error);
@@ -631,6 +653,267 @@ app.post('/api/bills/:id/approve', authenticateToken, async (req, res) => {
   }
 });
 
+// Actualizar estado de factura (solo administradores)
+app.patch('/api/bills/:id/status', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Verificar que es coordinador
+    const userCheck = await pool.query(
+      'SELECT role FROM profiles WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'area_coordinator') {
+      return res.status(403).json({ error: 'No tienes permisos para actualizar estados de facturas' });
+    }
+
+    // Validar estado (solo pendiente o aprobada)
+    const validStatuses = ['pending', 'approved'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Estado inválido. Solo se permite "pending" o "approved"' });
+    }
+
+    // Si el estado es "approved", actualizar también approved_by y approved_at
+    let query;
+    let params;
+    
+    if (status === 'approved') {
+      query = `UPDATE utility_bills SET
+        status = $1,
+        approved_by = $2,
+        approved_at = NOW()
+      WHERE id = $3
+      RETURNING *`;
+      params = [status, req.user.id, id];
+    } else {
+      query = `UPDATE utility_bills SET
+        status = $1
+      WHERE id = $2
+      RETURNING *`;
+      params = [status, id];
+    }
+
+    const result = await pool.query(query, params);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Factura no encontrada' });
+    }
+
+    res.json(transformBillToFrontend(result.rows[0]));
+  } catch (error) {
+    console.error('Error al actualizar estado de factura:', error);
+    res.status(500).json({ error: 'Error al actualizar estado de factura' });
+  }
+});
+
+// ============================================
+// RUTAS DE USUARIOS (solo administradores)
+// ============================================
+
+// Listar todos los usuarios (solo coordinadores)
+app.get('/api/users', authenticateToken, async (req, res) => {
+  try {
+    // Verificar que es coordinador
+    const userCheck = await pool.query(
+      'SELECT role FROM profiles WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'area_coordinator') {
+      return res.status(403).json({ error: 'No tienes permisos para ver usuarios' });
+    }
+
+    const result = await pool.query(
+      'SELECT id, email, full_name, role, department, location, created_at, updated_at FROM profiles ORDER BY created_at DESC'
+    );
+
+    const users = result.rows.map(row => ({
+      id: row.id,
+      email: row.email,
+      fullName: row.full_name,
+      role: row.role,
+      department: row.department,
+      location: row.location,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+
+    res.json(users);
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    res.status(500).json({ error: 'Error al obtener usuarios' });
+  }
+});
+
+// Crear nuevo usuario (solo coordinadores)
+app.post('/api/users/create', authenticateToken, async (req, res) => {
+  try {
+    const { email, password, fullName, location, department, role } = req.body;
+
+    // Verificar que es coordinador
+    const userCheck = await pool.query(
+      'SELECT role FROM profiles WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'area_coordinator') {
+      return res.status(403).json({ error: 'No tienes permisos para crear usuarios' });
+    }
+
+    // Validar campos requeridos
+    if (!email || !password || !fullName || !location) {
+      return res.status(400).json({ error: 'Faltan campos requeridos' });
+    }
+
+    // Verificar que el email no exista
+    const existingUser = await pool.query(
+      'SELECT id FROM profiles WHERE email = $1',
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'El email ya está registrado' });
+    }
+
+    // Crear usuario
+    const result = await pool.query(
+      `INSERT INTO profiles (email, password_hash, full_name, role, location, department)
+       VALUES ($1, crypt($2, gen_salt('bf')), $3, $4, $5, $6)
+       RETURNING id, email, full_name, role, location, department, created_at, updated_at`,
+      [email, password, fullName, role || 'basic_user', location, department || '']
+    );
+
+    const newUser = {
+      id: result.rows[0].id,
+      email: result.rows[0].email,
+      fullName: result.rows[0].full_name,
+      role: result.rows[0].role,
+      location: result.rows[0].location,
+      department: result.rows[0].department,
+      createdAt: result.rows[0].created_at,
+      updatedAt: result.rows[0].updated_at
+    };
+
+    res.status(201).json(newUser);
+  } catch (error) {
+    console.error('Error al crear usuario:', error);
+    res.status(500).json({ error: 'Error al crear usuario' });
+  }
+});
+
+// Actualizar usuario (solo coordinadores)
+app.put('/api/users/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fullName, location, department, role, password } = req.body;
+
+    // Verificar que es coordinador
+    const userCheck = await pool.query(
+      'SELECT role FROM profiles WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'area_coordinator') {
+      return res.status(403).json({ error: 'No tienes permisos para actualizar usuarios' });
+    }
+
+    // Validar campos requeridos
+    if (!fullName || !location) {
+      return res.status(400).json({ error: 'Faltan campos requeridos' });
+    }
+
+    // Construir query de actualización
+    let query;
+    let params;
+
+    if (password) {
+      // Si se proporciona nueva contraseña, actualizarla también
+      query = `UPDATE profiles SET 
+        full_name = $1, 
+        location = $2, 
+        department = $3, 
+        role = $4,
+        password_hash = crypt($5, gen_salt('bf')),
+        updated_at = NOW()
+      WHERE id = $6
+      RETURNING id, email, full_name, role, location, department, created_at, updated_at`;
+      params = [fullName, location, department || '', role || 'basic_user', password, id];
+    } else {
+      // Sin cambio de contraseña
+      query = `UPDATE profiles SET 
+        full_name = $1, 
+        location = $2, 
+        department = $3, 
+        role = $4,
+        updated_at = NOW()
+      WHERE id = $5
+      RETURNING id, email, full_name, role, location, department, created_at, updated_at`;
+      params = [fullName, location, department || '', role || 'basic_user', id];
+    }
+
+    const result = await pool.query(query, params);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const updatedUser = {
+      id: result.rows[0].id,
+      email: result.rows[0].email,
+      fullName: result.rows[0].full_name,
+      role: result.rows[0].role,
+      location: result.rows[0].location,
+      department: result.rows[0].department,
+      createdAt: result.rows[0].created_at,
+      updatedAt: result.rows[0].updated_at
+    };
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error al actualizar usuario:', error);
+    res.status(500).json({ error: 'Error al actualizar usuario' });
+  }
+});
+
+// Eliminar usuario (solo coordinadores)
+app.delete('/api/users/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar que es coordinador
+    const userCheck = await pool.query(
+      'SELECT role FROM profiles WHERE id = $1',
+      [req.user.id]
+    );
+
+    if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'area_coordinator') {
+      return res.status(403).json({ error: 'No tienes permisos para eliminar usuarios' });
+    }
+
+    // No permitir que se elimine a sí mismo
+    if (id === req.user.id) {
+      return res.status(400).json({ error: 'No puedes eliminar tu propia cuenta' });
+    }
+
+    // Eliminar usuario
+    const result = await pool.query(
+      'DELETE FROM profiles WHERE id = $1 RETURNING id',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    res.json({ message: 'Usuario eliminado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar usuario:', error);
+    res.status(500).json({ error: 'Error al eliminar usuario' });
+  }
+});
+
 // ============================================
 // RUTAS DE HEALTH CHECK
 // ============================================
@@ -690,10 +973,13 @@ app.use((err, req, res, next) => {
 // INICIAR SERVIDOR
 // ============================================
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Servidor backend ejecutándose en http://localhost:${PORT}`);
   console.log(`📊 Base de datos: PostgreSQL Local`);
   console.log(`🔐 Autenticación: JWT`);
+  
+  // Verificar configuración de correo
+  await verifyEmailConfig();
 });
 
 // Manejo de cierre graceful
@@ -702,4 +988,7 @@ process.on('SIGTERM', async () => {
   await pool.end();
   process.exit(0);
 });
+
+// Export para Vercel serverless
+export default app;
 
