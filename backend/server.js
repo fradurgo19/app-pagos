@@ -458,15 +458,16 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
     console.log('📤 Factura transformada para frontend:', JSON.stringify(transformedBill, null, 2));
     
     // Enviar notificación por correo (no bloqueante)
-    // Obtener datos del usuario que creó la factura
-    const userResult = await pool.query(
-      'SELECT email, full_name FROM profiles WHERE id = $1',
-      [req.user.id]
-    );
+    // Obtener datos del usuario que creó la factura usando Supabase
+    const { data: userData, error: userError } = await supabaseDb
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', req.user.id)
+      .single();
 
-    if (userResult.rows.length > 0) {
-      const userEmail = userResult.rows[0].email;
-      const userName = userResult.rows[0].full_name;
+    if (!userError && userData) {
+      const userEmail = userData.email;
+      const userName = userData.full_name;
 
       // Preparar URL del archivo adjunto si existe (Supabase)
       let attachmentPath = normalizedBill.documentUrl || null;
