@@ -742,21 +742,28 @@ app.patch('/api/bills/:id/status', authenticateToken, async (req, res) => {
 // Listar todos los usuarios (solo coordinadores)
 app.get('/api/users', authenticateToken, async (req, res) => {
   try {
-    // Verificar que es coordinador
-    const userCheck = await pool.query(
-      'SELECT role FROM profiles WHERE id = $1',
-      [req.user.id]
-    );
+    // Verificar que es coordinador usando Supabase
+    const { data: userCheck, error: userError } = await supabaseDb
+      .from('profiles')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
 
-    if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'area_coordinator') {
+    if (userError || !userCheck || userCheck.role !== 'area_coordinator') {
       return res.status(403).json({ error: 'No tienes permisos para ver usuarios' });
     }
 
-    const result = await pool.query(
-      'SELECT id, email, full_name, role, department, location, created_at, updated_at FROM profiles ORDER BY created_at DESC'
-    );
+    const { data: users, error } = await supabaseDb
+      .from('profiles')
+      .select('id, email, full_name, role, department, location, created_at, updated_at')
+      .order('created_at', { ascending: false });
 
-    const users = result.rows.map(row => ({
+    if (error) {
+      console.error('Error al obtener usuarios:', error);
+      return res.status(500).json({ error: 'Error al obtener usuarios' });
+    }
+
+    const transformedUsers = users.map(row => ({
       id: row.id,
       email: row.email,
       fullName: row.full_name,
@@ -767,7 +774,7 @@ app.get('/api/users', authenticateToken, async (req, res) => {
       updatedAt: row.updated_at
     }));
 
-    res.json(users);
+    res.json(transformedUsers);
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
     res.status(500).json({ error: 'Error al obtener usuarios' });
