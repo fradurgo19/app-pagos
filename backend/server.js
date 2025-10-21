@@ -200,32 +200,31 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Email y contraseña son requeridos' });
     }
 
-    // Usar Supabase client para autenticación (evita problemas SASL)
+    // Usar Supabase client para obtener usuario
     const { data: users, error: queryError } = await supabaseDb
       .from('profiles')
       .select('id, email, full_name, role, department, location, password_hash')
       .eq('email', email)
       .single();
 
+    console.log('Usuario encontrado:', users ? 'Sí' : 'No');
+
     if (queryError || !users) {
+      console.log('Error query:', queryError);
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-    // Verificar password con pg.query individual (no pool)
-    const { Client } = pg;
-    const client = new Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: isProduction ? { rejectUnauthorized: false } : false
-    });
-    
-    await client.connect();
-    const passwordCheck = await client.query(
-      'SELECT crypt($1, $2) = $2 as valid',
-      [password, users.password_hash]
-    );
-    await client.end();
+    // Verificar password usando rpc de Supabase con la función verify_password
+    const { data: isValid, error: rpcError } = await supabaseDb
+      .rpc('check_password', { 
+        user_email: email, 
+        user_password: password 
+      });
 
-    if (!passwordCheck.rows[0]?.valid) {
+    console.log('Password válido:', isValid);
+    console.log('Error RPC:', rpcError);
+
+    if (rpcError || !isValid) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
