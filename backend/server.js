@@ -786,13 +786,14 @@ app.post('/api/users/create', authenticateToken, async (req, res) => {
   try {
     const { email, password, fullName, location, department, role } = req.body;
 
-    // Verificar que es coordinador
-    const userCheck = await pool.query(
-      'SELECT role FROM profiles WHERE id = $1',
-      [req.user.id]
-    );
+    // Verificar que es coordinador usando Supabase
+    const { data: userCheck, error: userError } = await supabaseDb
+      .from('profiles')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
 
-    if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'area_coordinator') {
+    if (userError || !userCheck || userCheck.role !== 'area_coordinator') {
       return res.status(403).json({ error: 'No tienes permisos para crear usuarios' });
     }
 
@@ -802,35 +803,45 @@ app.post('/api/users/create', authenticateToken, async (req, res) => {
     }
 
     // Verificar que el email no exista
-    const existingUser = await pool.query(
-      'SELECT id FROM profiles WHERE email = $1',
-      [email]
-    );
+    const { data: existingUser } = await supabaseDb
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .single();
 
-    if (existingUser.rows.length > 0) {
+    if (existingUser) {
       return res.status(400).json({ error: 'El email ya está registrado' });
     }
 
-    // Crear usuario
-    const result = await pool.query(
-      `INSERT INTO profiles (email, password_hash, full_name, role, location, department)
-       VALUES ($1, crypt($2, gen_salt('bf')), $3, $4, $5, $6)
-       RETURNING id, email, full_name, role, location, department, created_at, updated_at`,
-      [email, password, fullName, role || 'basic_user', location, department || '']
-    );
+    // Crear usuario usando RPC con función que maneja crypt
+    const { data: newUser, error: createError } = await supabaseDb
+      .rpc('create_user_with_password', {
+        user_email: email,
+        user_password: password,
+        user_full_name: fullName,
+        user_role: role || 'basic_user',
+        user_location: location,
+        user_department: department || ''
+      });
 
-    const newUser = {
-      id: result.rows[0].id,
-      email: result.rows[0].email,
-      fullName: result.rows[0].full_name,
-      role: result.rows[0].role,
-      location: result.rows[0].location,
-      department: result.rows[0].department,
-      createdAt: result.rows[0].created_at,
-      updatedAt: result.rows[0].updated_at
+    if (createError || !newUser || newUser.length === 0) {
+      console.error('Error al crear usuario:', createError);
+      return res.status(500).json({ error: 'Error al crear usuario' });
+    }
+
+    const userData = newUser[0];
+    const transformedUser = {
+      id: userData.id,
+      email: userData.email,
+      fullName: userData.full_name,
+      role: userData.role,
+      location: userData.location,
+      department: userData.department,
+      createdAt: userData.created_at,
+      updatedAt: userData.updated_at
     };
 
-    res.status(201).json(newUser);
+    res.status(201).json(transformedUser);
   } catch (error) {
     console.error('Error al crear usuario:', error);
     res.status(500).json({ error: 'Error al crear usuario' });
