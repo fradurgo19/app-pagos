@@ -46,16 +46,10 @@ const upload = multer({
 });
 
 // Configuración de PostgreSQL con SSL para Supabase
-// Usar conexión directa en producción para evitar problemas SASL con pooling
 const isProduction = process.env.NODE_ENV === 'production';
 
-// En producción, usar conexión directa; en desarrollo, usar la que esté configurada
-const dbUrl = isProduction && process.env.DATABASE_URL_DIRECT 
-  ? process.env.DATABASE_URL_DIRECT 
-  : process.env.DATABASE_URL;
-
 const pool = new pg.Pool({
-  connectionString: dbUrl,
+  connectionString: process.env.DATABASE_URL,
   ssl: isProduction ? {
     rejectUnauthorized: false
   } : false,
