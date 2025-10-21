@@ -160,7 +160,7 @@ export const UsersPage: React.FC = () => {
           updateData.password = formData.password;
         }
 
-        const response = await fetch(`http://localhost:3000/api/users/${editingUserId}`, {
+        const response = await fetch(`${API_URL}/api/users/${editingUserId}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -178,7 +178,7 @@ export const UsersPage: React.FC = () => {
         }
       } else {
         // Crear nuevo usuario
-        const response = await fetch('http://localhost:3000/api/users/create', {
+        const response = await fetch(`${API_URL}/api/users/create`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
