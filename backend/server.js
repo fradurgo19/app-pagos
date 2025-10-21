@@ -180,9 +180,12 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Email y contraseña son requeridos' });
     }
 
-    // Verificar credenciales usando la función SQL con cast explícito
+    // Verificar credenciales directamente sin función
     const result = await pool.query(
-      'SELECT * FROM verify_credentials($1::text, $2::text)',
+      `SELECT id as user_id, role, full_name 
+       FROM profiles 
+       WHERE email = $1 
+       AND password_hash = crypt($2, password_hash)`,
       [email, password]
     );
 
