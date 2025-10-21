@@ -318,11 +318,22 @@ app.get('/api/bills', authenticateToken, async (req, res) => {
   try {
     const { period, serviceType, location, status, search } = req.query;
     
+    // Obtener rol del usuario
+    const { data: userProfile } = await supabaseDb
+      .from('profiles')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
+    
     // Usar Supabase client para evitar problemas SASL
     let query = supabaseDb
       .from('utility_bills')
-      .select('*')
-      .eq('user_id', req.user.id);
+      .select('*');
+    
+    // Si NO es coordinador, filtrar por user_id
+    if (userProfile?.role !== 'area_coordinator') {
+      query = query.eq('user_id', req.user.id);
+    }
 
     if (period) {
       query = query.eq('period', period);
