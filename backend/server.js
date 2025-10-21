@@ -48,11 +48,23 @@ const upload = multer({
 // Configuración de PostgreSQL con SSL para Supabase
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Configuración explícita para evitar problemas de parsing del connection string
+const poolConfig = process.env.DATABASE_URL 
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: isProduction ? { rejectUnauthorized: false } : false
+    }
+  : {
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT || '5432'),
+      database: process.env.DB_NAME || 'postgres',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD,
+      ssl: isProduction ? { rejectUnauthorized: false } : false
+    };
+
 const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: isProduction ? {
-    rejectUnauthorized: false
-  } : false,
+  ...poolConfig,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000
