@@ -107,7 +107,23 @@ VALUES (
   'Administración'
 ) ON CONFLICT (email) DO NOTHING;
 
+-- Función para verificar credenciales
+CREATE OR REPLACE FUNCTION verify_credentials(p_email text, p_password text)
+RETURNS TABLE (
+  user_id uuid,
+  role text,
+  full_name text
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT id, profiles.role, profiles.full_name
+  FROM profiles
+  WHERE profiles.email = p_email
+    AND password_hash = crypt(p_password, password_hash);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Verificar
-SELECT 'Tablas creadas exitosamente' as status;
+SELECT 'Tablas y funciones creadas exitosamente' as status;
 SELECT count(*) as total_usuarios FROM profiles;
 

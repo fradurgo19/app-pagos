@@ -26,6 +26,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadProfile = async () => {
     try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setProfile(null);
+        setUser(null);
+        return;
+      }
+
       const userProfile = await authService.getUserProfile();
       if (userProfile) {
         setProfile(userProfile);
@@ -33,11 +40,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setProfile(null);
         setUser(null);
+        localStorage.removeItem('auth_token');
       }
     } catch (error) {
       console.error('Error loading profile:', error);
       setProfile(null);
       setUser(null);
+      localStorage.removeItem('auth_token');
     }
   };
 
