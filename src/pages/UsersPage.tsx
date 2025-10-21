@@ -83,6 +83,7 @@ export const UsersPage: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('👥 Usuarios cargados:', data);
         setUsers(data);
       }
     } catch (error) {
@@ -236,7 +237,16 @@ export const UsersPage: React.FC = () => {
     }
   };
 
-  const getRoleBadge = (role: UserRole) => {
+  const getRoleBadge = (role: UserRole | undefined | null) => {
+    if (!role) {
+      return (
+        <Badge variant="secondary">
+          <UserIcon className="w-3 h-3 mr-1 inline" />
+          Sin rol
+        </Badge>
+      );
+    }
+    
     return role === 'area_coordinator' ? (
       <Badge variant="info">
         <Shield className="w-3 h-3 mr-1 inline" />
