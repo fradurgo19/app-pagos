@@ -8,7 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { sendNewBillNotification, verifyEmailConfig } from './emailService.js';
-import { uploadToSupabase } from './supabaseClient.js';
+import { uploadToSupabase, supabaseDb } from './supabaseClient.js';
 
 dotenv.config();
 
@@ -200,26 +200,41 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Email y contraseña son requeridos' });
     }
 
-    // Verificar credenciales directamente sin función
-    const result = await pool.query(
-      `SELECT id as user_id, role, full_name 
-       FROM profiles 
-       WHERE email = $1 
-       AND password_hash = crypt($2, password_hash)`,
-      [email, password]
-    );
+    // Usar Supabase client para autenticación (evita problemas SASL)
+    const { data: users, error: queryError } = await supabaseDb
+      .from('profiles')
+      .select('id, email, full_name, role, department, location, password_hash')
+      .eq('email', email)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (queryError || !users) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
-    const { user_id, role, full_name } = result.rows[0];
-
-    // Obtener datos completos del usuario
-    const userData = await pool.query(
-      'SELECT id, email, full_name, role, department, location FROM profiles WHERE id = $1',
-      [user_id]
+    // Verificar password con pg.query individual (no pool)
+    const { Client } = pg;
+    const client = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: isProduction ? { rejectUnauthorized: false } : false
+    });
+    
+    await client.connect();
+    const passwordCheck = await client.query(
+      'SELECT crypt($1, $2) = $2 as valid',
+      [password, users.password_hash]
     );
+    await client.end();
+
+    if (!passwordCheck.rows[0]?.valid) {
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
+
+    const user_id = users.id;
+    const role = users.role;
+    const full_name = users.full_name;
+
+    // Datos completos del usuario
+    const userData = { rows: [users] };
 
     const user = userData.rows[0];
 
