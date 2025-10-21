@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpDown, Eye, Trash2, Download, Check } from 'lucide-react';
+import { ArrowUpDown, Eye, Trash2, Download } from 'lucide-react';
 import { UtilityBill, SortState } from '../types';
 import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
@@ -46,6 +46,9 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
     const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
     return sortState.direction === 'asc' ? comparison : -comparison;
   });
+
+  // Calcular total de montos
+  const totalAmount = bills.reduce((sum, bill) => sum + bill.totalAmount, 0);
 
   const handleSelectAll = () => {
     if (selectedBills.size === bills.length) {
@@ -101,6 +104,20 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
       onBillUpdated();
     } catch (error) {
       alert('Error al aprobar la factura');
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    if (!isAreaCoordinator) return;
+
+    setLoading(id);
+    try {
+      await billService.updateStatus(id, newStatus);
+      onBillUpdated();
+    } catch (error: any) {
+      alert(error.message || 'Error al actualizar el estado de la factura');
     } finally {
       setLoading(null);
     }
@@ -228,20 +245,27 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                     {bill.location}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <Badge status={bill.status} />
+                    {isAreaCoordinator ? (
+                      <select
+                        value={bill.status === 'approved' || bill.status === 'paid' ? 'approved' : 'pending'}
+                        onChange={(e) => handleStatusChange(bill.id, e.target.value)}
+                        disabled={loading === bill.id}
+                        className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                          backgroundColor: bill.status === 'approved' || bill.status === 'paid' ? '#dcfce7' : '#fef3c7',
+                          color: bill.status === 'approved' || bill.status === 'paid' ? '#166534' : '#92400e',
+                          fontWeight: '500'
+                        }}
+                      >
+                        <option value="pending" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>🟡 Pendiente</option>
+                        <option value="approved" style={{ backgroundColor: '#dcfce7', color: '#166534' }}>🟢 Aprobada</option>
+                      </select>
+                    ) : (
+                      <Badge status={bill.status} />
+                    )}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm">
                     <div className="flex items-center space-x-2">
-                      {isAreaCoordinator && bill.status === 'pending' && (
-                        <button
-                          onClick={() => handleApprove(bill.id)}
-                          disabled={loading === bill.id}
-                          className="text-green-600 hover:text-green-900"
-                          aria-label="Aprobar factura"
-                        >
-                          <Check className="w-4 h-4" />
-                        </button>
-                      )}
                       <button
                         onClick={() => setViewingBill(bill)}
                         className="text-blue-600 hover:text-blue-900"
@@ -274,6 +298,20 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                   </td>
                 </tr>
               ))
+            )}
+            {/* Fila de totales */}
+            {bills.length > 0 && (
+              <tr className="bg-blue-50 border-t-2 border-blue-200 font-bold">
+                <td className="px-4 py-4" colSpan={4}>
+                  <div className="text-right text-gray-900 font-bold">
+                    TOTAL:
+                  </div>
+                </td>
+                <td className="px-4 py-4 whitespace-nowrap text-lg font-bold text-blue-600">
+                  {formatCurrency(totalAmount)}
+                </td>
+                <td className="px-4 py-4" colSpan={4}></td>
+              </tr>
             )}
           </tbody>
         </table>

@@ -1,7 +1,6 @@
 import { UtilityBill, FilterOptions, BillStatus } from '../types';
 import { authService } from './authService';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { API_URL } from '../config';
 
 const getAuthHeaders = () => {
   const token = authService.getAuthToken();
@@ -130,6 +129,22 @@ export const billService = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Error al aprobar factura');
+    }
+
+    const data = await response.json();
+    return mapDbRowToBill(data);
+  },
+
+  async updateStatus(id: string, status: string): Promise<UtilityBill> {
+    const response = await fetch(`${API_URL}/api/bills/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al actualizar estado de factura');
     }
 
     const data = await response.json();

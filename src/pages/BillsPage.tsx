@@ -20,6 +20,7 @@ export const BillsPage: React.FC = () => {
   const { bills, loading, refresh } = useBills(filters);
 
   const uniqueLocations = Array.from(new Set(bills.map(b => b.location)));
+  const uniquePeriods = Array.from(new Set(bills.map(b => b.period))).sort((a, b) => b.localeCompare(a));
 
   const handleFilterChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
@@ -82,20 +83,17 @@ export const BillsPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-        <div className="lg:col-span-1">
-          <SearchBar
-            placeholder="Buscar facturas..."
-            onSearch={handleSearch}
-          />
-        </div>
-        <div className="lg:col-span-3">
-          <FilterBar
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            locations={uniqueLocations}
-          />
-        </div>
+      <div className="space-y-4">
+        <SearchBar
+          placeholder="Buscar facturas..."
+          onSearch={handleSearch}
+        />
+        <FilterBar
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          locations={uniqueLocations}
+          periods={uniquePeriods}
+        />
       </div>
 
       <BillsTable

@@ -1,26 +1,34 @@
 import { useMemo } from 'react';
 import { UtilityBill, DashboardKPI, ServiceType } from '../types';
-import { getCurrentPeriod, getPreviousPeriod, isOverdue } from '../utils/formatters';
+import { getPreviousPeriod, isOverdue } from '../utils/formatters';
 
-export const useDashboardData = (bills: UtilityBill[]) => {
-  const currentPeriod = getCurrentPeriod();
-  const previousPeriod = getPreviousPeriod(currentPeriod);
-
+export const useDashboardData = (bills: UtilityBill[], selectedPeriods: string[], allBills: UtilityBill[]) => {
   const kpis: DashboardKPI = useMemo(() => {
-    const currentMonthBills = bills.filter(b => b.period === currentPeriod);
-    const previousMonthBills = bills.filter(b => b.period === previousPeriod);
+    // Usar las facturas ya filtradas
+    const currentMonthBills = bills;
+    
+    // Para el cambio, calcular el total del mes anterior al más reciente seleccionado
+    let monthlyChange = 0;
+    if (selectedPeriods.length > 0) {
+      const latestPeriod = [...selectedPeriods].sort((a, b) => b.localeCompare(a))[0];
+      const previousPeriod = getPreviousPeriod(latestPeriod);
+      const previousMonthBills = allBills.filter(b => b.period === previousPeriod);
+      const previousTotal = previousMonthBills.reduce((sum, b) => sum + b.totalAmount, 0);
+      const currentTotal = currentMonthBills.reduce((sum, b) => sum + b.totalAmount, 0);
+      monthlyChange = previousTotal > 0 ? ((currentTotal - previousTotal) / previousTotal) * 100 : 0;
+    }
 
     const monthlyTotal = currentMonthBills.reduce((sum, b) => sum + b.totalAmount, 0);
-    const previousTotal = previousMonthBills.reduce((sum, b) => sum + b.totalAmount, 0);
-    const monthlyChange = previousTotal > 0 ? ((monthlyTotal - previousTotal) / previousTotal) * 100 : 0;
-
     const pendingCount = currentMonthBills.filter(b => b.status === 'pending').length;
+    
+    // Solo contar como vencidas las facturas PENDIENTES que están vencidas
+    // Las aprobadas no cuentan como vencidas aunque hayan pasado la fecha
     const overdueCount = currentMonthBills.filter(b =>
-      (b.status === 'pending' || b.status === 'approved') && isOverdue(b.dueDate)
+      b.status === 'pending' && isOverdue(b.dueDate)
     ).length;
 
     return { monthlyTotal, monthlyChange, pendingCount, overdueCount };
-  }, [bills, currentPeriod, previousPeriod]);
+  }, [bills, allBills, selectedPeriods]);
 
   const trendData = useMemo(() => {
     const last6Months: string[] = [];
@@ -34,7 +42,7 @@ export const useDashboardData = (bills: UtilityBill[]) => {
     }
 
     const monthlyTotals = last6Months.map(period => {
-      const periodBills = bills.filter(b => b.period === period);
+      const periodBills = allBills.filter(b => b.period === period);
       return periodBills.reduce((sum, b) => sum + b.totalAmount, 0);
     });
 
@@ -45,11 +53,12 @@ export const useDashboardData = (bills: UtilityBill[]) => {
     });
 
     return { labels, data: monthlyTotals };
-  }, [bills]);
+  }, [allBills]);
 
   const serviceTypeData = useMemo(() => {
-    const currentMonthBills = bills.filter(b => b.period === currentPeriod);
-    const serviceTypes: ServiceType[] = ['electricity', 'water', 'gas', 'internet', 'phone', 'waste', 'sewer', 'other'];
+    // Usar las facturas ya filtradas por periodo
+    const currentMonthBills = bills;
+    const serviceTypes: ServiceType[] = ['electricity', 'water', 'gas', 'internet', 'phone', 'cellular', 'waste', 'sewer', 'security', 'administration', 'rent', 'other'];
     
     const serviceLabels: Record<ServiceType, string> = {
       electricity: 'Electricidad',
@@ -57,8 +66,12 @@ export const useDashboardData = (bills: UtilityBill[]) => {
       gas: 'Gas',
       internet: 'Internet',
       phone: 'Teléfono',
+      cellular: 'Celular',
       waste: 'Basuras',
       sewer: 'Alcantarillado',
+      security: 'Seguridad',
+      administration: 'Administración',
+      rent: 'Arrendamiento',
       other: 'Otro'
     };
 
@@ -67,14 +80,26 @@ export const useDashboardData = (bills: UtilityBill[]) => {
       return typeBills.reduce((sum, b) => sum + b.totalAmount, 0);
     });
 
+    // Filtrar solo los servicios que tienen datos
+    const filteredLabels: string[] = [];
+    const filteredData: number[] = [];
+    
+    serviceTypes.forEach((type, index) => {
+      if (data[index] > 0) {
+        filteredLabels.push(serviceLabels[type]);
+        filteredData.push(data[index]);
+      }
+    });
+
     return {
-      labels: serviceTypes.map(t => serviceLabels[t]),
-      data
+      labels: filteredLabels,
+      data: filteredData
     };
-  }, [bills, currentPeriod]);
+  }, [bills, selectedPeriods]);
 
   const locationData = useMemo(() => {
-    const currentMonthBills = bills.filter(b => b.period === currentPeriod);
+    // Usar las facturas ya filtradas por periodo
+    const currentMonthBills = bills;
     const locationMap = new Map<string, number>();
 
     currentMonthBills.forEach(bill => {
@@ -86,7 +111,7 @@ export const useDashboardData = (bills: UtilityBill[]) => {
       labels: Array.from(locationMap.keys()),
       data: Array.from(locationMap.values())
     };
-  }, [bills, currentPeriod]);
+  }, [bills, selectedPeriods]);
 
   return { kpis, trendData, serviceTypeData, locationData };
 };

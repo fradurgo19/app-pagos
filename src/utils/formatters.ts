@@ -98,8 +98,12 @@ export const translateServiceType = (serviceType: string): string => {
     'gas': 'Gas',
     'internet': 'Internet',
     'phone': 'Teléfono',
+    'cellular': 'Celular',
     'waste': 'Basuras',
     'sewer': 'Alcantarillado',
+    'security': 'Seguridad',
+    'administration': 'Administración',
+    'rent': 'Arrendamiento',
     'other': 'Otro'
   };
   

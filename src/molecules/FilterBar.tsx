@@ -6,12 +6,14 @@ interface FilterBarProps {
   filters: FilterOptions;
   onFilterChange: (filters: FilterOptions) => void;
   locations: string[];
+  periods: string[];
 }
 
 export const FilterBar: React.FC<FilterBarProps> = ({
   filters,
   onFilterChange,
-  locations
+  locations,
+  periods
 }) => {
   const serviceTypeOptions = [
     { value: 'all', label: 'Todos los Servicios' },
@@ -20,8 +22,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     { value: 'gas', label: 'Gas' },
     { value: 'internet', label: 'Internet' },
     { value: 'phone', label: 'Teléfono' },
+    { value: 'cellular', label: 'Celular' },
     { value: 'waste', label: 'Basuras' },
     { value: 'sewer', label: 'Alcantarillado' },
+    { value: 'security', label: 'Seguridad' },
+    { value: 'administration', label: 'Administración' },
+    { value: 'rent', label: 'Arrendamiento' },
     { value: 'other', label: 'Otro' }
   ];
 
@@ -39,6 +45,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     ...locations.map(loc => ({ value: loc, label: loc }))
   ];
 
+  const periodOptions = [
+    { value: 'all', label: 'Todos los Periodos' },
+    ...periods.map(period => ({ value: period, label: period }))
+  ];
+
   const handleChange = (key: keyof FilterOptions, value: string) => {
     onFilterChange({
       ...filters,
@@ -47,7 +58,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <Select
+        label="Periodo"
+        value={filters.period || 'all'}
+        options={periodOptions}
+        onChange={(e) => handleChange('period', e.target.value)}
+      />
       <Select
         label="Tipo de Servicio"
         value={filters.serviceType || 'all'}

@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DollarSign, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { KPICard } from '../molecules/KPICard';
 import { TrendChart, ServiceTypeChart, LocationChart } from '../organisms/DashboardCharts';
 import { useBills } from '../hooks/useBills';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { formatCurrency, getCurrentPeriod } from '../utils/formatters';
-import { Input } from '../atoms/Input';
+import { PeriodSelector } from '../components/PeriodSelector';
 
 export const DashboardPage: React.FC = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState(getCurrentPeriod());
-  const { bills, loading } = useBills({ period: selectedPeriod });
-  const { kpis, trendData, serviceTypeData, locationData } = useDashboardData(bills);
+  const [selectedPeriods, setSelectedPeriods] = useState<string[]>([getCurrentPeriod()]);
+  const { bills: allBills, loading } = useBills({});
+  
+  // Filtrar facturas por periodos seleccionados
+  const periodBills = useMemo(() => {
+    if (selectedPeriods.length === 0) {
+      return allBills;
+    }
+    return allBills.filter(bill => selectedPeriods.includes(bill.period));
+  }, [allBills, selectedPeriods]);
+
+  // Obtener periodos disponibles
+  const availablePeriods = useMemo(() => {
+    const periods = Array.from(new Set(allBills.map(b => b.period)));
+    return periods.sort((a, b) => b.localeCompare(a));
+  }, [allBills]);
+
+  const { kpis, trendData, serviceTypeData, locationData } = useDashboardData(periodBills, selectedPeriods, allBills);
 
   if (loading) {
     return (
@@ -25,21 +40,27 @@ export const DashboardPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Panel de Control</h1>
-          <p className="text-gray-600 mt-1">Resumen de tus facturas de servicios</p>
+          <p className="text-gray-600 mt-1">
+            Resumen de tus facturas de servicios
+            {selectedPeriods.length > 0 && (
+              <span className="ml-2 text-blue-600 font-medium">
+                ({selectedPeriods.length === 1 ? selectedPeriods[0] : `${selectedPeriods.length} periodos`})
+              </span>
+            )}
+          </p>
         </div>
-        <div className="w-48">
-          <Input
-            type="month"
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            label="Período"
+        <div className="w-72">
+          <PeriodSelector
+            availablePeriods={availablePeriods}
+            selectedPeriods={selectedPeriods}
+            onChange={setSelectedPeriods}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Total Mensual"
+          title={selectedPeriods.length === 1 ? "Total Mensual" : "Total Periodos"}
           value={formatCurrency(kpis.monthlyTotal)}
           change={kpis.monthlyChange}
           icon={<DollarSign className="w-6 h-6 text-white" />}
@@ -59,7 +80,7 @@ export const DashboardPage: React.FC = () => {
         />
         <KPICard
           title="Facturas Aprobadas"
-          value={(bills.filter(b => b.status === 'approved').length).toString()}
+          value={(periodBills.filter(b => b.status === 'approved' || b.status === 'paid').length).toString()}
           icon={<CheckCircle className="w-6 h-6 text-white" />}
           iconColor="bg-green-500"
         />
@@ -67,11 +88,19 @@ export const DashboardPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TrendChart labels={trendData.labels} data={trendData.data} />
-        <ServiceTypeChart labels={serviceTypeData.labels} data={serviceTypeData.data} />
+        <ServiceTypeChart 
+          labels={serviceTypeData.labels} 
+          data={serviceTypeData.data}
+          title={selectedPeriods.length === 1 ? "Mes Actual por Tipo de Servicio" : "Periodos Seleccionados por Tipo de Servicio"}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LocationChart labels={locationData.labels} data={locationData.data} />
+        <LocationChart 
+          labels={locationData.labels} 
+          data={locationData.data}
+          title={selectedPeriods.length === 1 ? "Distribución por Centro de Costos" : "Distribución por Centro de Costos (Periodos Seleccionados)"}
+        />
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
           <h3 className="text-lg font-semibold mb-4">Acciones Rápidas</h3>
           <div className="space-y-3">

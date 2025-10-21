@@ -32,6 +32,15 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Logo de la compañía */}
+        <div className="flex justify-center mb-6">
+          <img 
+            src="https://res.cloudinary.com/dbufrzoda/image/upload/v1750457354/Captura_de_pantalla_2025-06-20_170819_wzmyli.png" 
+            alt="Logo de la Compañía"
+            className="h-20 w-auto object-contain"
+          />
+        </div>
+        
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
             <LogIn className="w-8 h-8 text-white" />
@@ -72,15 +81,6 @@ export const LoginPage: React.FC = () => {
               Iniciar Sesión
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              ¿No tienes una cuenta?{' '}
-              <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
-                Registrarse
-              </Link>
-            </p>
-          </div>
         </Card>
       </div>
     </div>

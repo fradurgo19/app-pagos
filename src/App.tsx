@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AuthLayout } from './templates/AuthLayout';
 import { ProtectedLayout } from './templates/ProtectedLayout';
+import { RoleProtectedRoute } from './components/RoleProtectedRoute';
 
 // Lazy loading de páginas para mejorar el rendimiento
 const LoginPage = lazy(() => import('./pages/LoginPage').then(module => ({ default: module.LoginPage })));
@@ -10,6 +11,8 @@ const SignupPage = lazy(() => import('./pages/SignupPage').then(module => ({ def
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(module => ({ default: module.DashboardPage })));
 const BillsPage = lazy(() => import('./pages/BillsPage').then(module => ({ default: module.BillsPage })));
 const NewBillPage = lazy(() => import('./pages/NewBillPage').then(module => ({ default: module.NewBillPage })));
+const ReportsPage = lazy(() => import('./pages/ReportsPage').then(module => ({ default: module.ReportsPage })));
+const UsersPage = lazy(() => import('./pages/UsersPage').then(module => ({ default: module.UsersPage })));
 
 // Componente de carga mientras se cargan las páginas
 const LoadingSpinner = () => (
@@ -36,17 +39,33 @@ function App() {
             } />
             <Route path="/" element={
               <ProtectedLayout>
-                <DashboardPage />
+                <RoleProtectedRoute allowedRoles={['area_coordinator']}>
+                  <DashboardPage />
+                </RoleProtectedRoute>
               </ProtectedLayout>
             } />
             <Route path="/bills" element={
               <ProtectedLayout>
-                <BillsPage />
+                <RoleProtectedRoute allowedRoles={['area_coordinator']}>
+                  <BillsPage />
+                </RoleProtectedRoute>
               </ProtectedLayout>
             } />
             <Route path="/new-bill" element={
               <ProtectedLayout>
                 <NewBillPage />
+              </ProtectedLayout>
+            } />
+            <Route path="/reports" element={
+              <ProtectedLayout>
+                <ReportsPage />
+              </ProtectedLayout>
+            } />
+            <Route path="/users" element={
+              <ProtectedLayout>
+                <RoleProtectedRoute allowedRoles={['area_coordinator']}>
+                  <UsersPage />
+                </RoleProtectedRoute>
               </ProtectedLayout>
             } />
           </Routes>

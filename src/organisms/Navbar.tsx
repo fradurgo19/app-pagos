@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, PlusCircle, LogOut, Receipt } from 'lucide-react';
+import { LayoutDashboard, FileText, PlusCircle, LogOut, Receipt, BarChart3, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../atoms/Button';
 
@@ -14,19 +14,31 @@ export const Navbar: React.FC = () => {
     navigate('/login');
   };
 
-  const navItems = [
-    { path: '/', label: 'Panel', icon: LayoutDashboard },
-    { path: '/bills', label: 'Facturas', icon: FileText },
-    { path: '/new-bill', label: 'Nueva Factura', icon: PlusCircle }
+  // Definir opciones del menú según el rol
+  const allNavItems = [
+    { path: '/', label: 'Panel', icon: LayoutDashboard, roles: ['area_coordinator'] },
+    { path: '/bills', label: 'Facturas', icon: FileText, roles: ['area_coordinator'] },
+    { path: '/new-bill', label: 'Nueva Factura', icon: PlusCircle, roles: ['area_coordinator', 'basic_user'] },
+    { path: '/reports', label: 'Mis Facturas', icon: BarChart3, roles: ['area_coordinator', 'basic_user'] },
+    { path: '/users', label: 'Usuarios', icon: Users, roles: ['area_coordinator'] }
   ];
+
+  // Filtrar opciones según el rol del usuario
+  const navItems = allNavItems.filter(item => 
+    item.roles.includes(profile?.role || 'basic_user')
+  );
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
-            <Link to="/" className="flex items-center space-x-2">
-              <Receipt className="w-8 h-8 text-blue-600" />
+            <Link to="/" className="flex items-center space-x-3">
+              <img 
+                src="https://res.cloudinary.com/dbufrzoda/image/upload/v1750457354/Captura_de_pantalla_2025-06-20_170819_wzmyli.png" 
+                alt="Logo de la Compañía"
+                className="h-10 w-auto object-contain"
+              />
               <span className="text-xl font-bold text-gray-900">Gestión de Facturas</span>
             </Link>
 
