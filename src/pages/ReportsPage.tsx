@@ -192,23 +192,29 @@ export const ReportsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {isAdmin ? 'Todas las Facturas' : 'Mis Facturas'}
-          </h1>
-          <p className="text-gray-600 mt-1">
-            {isAdmin 
-              ? 'Historial de facturas de todos los usuarios' 
-              : 'Historial de todas tus facturas cargadas'
-            }
-          </p>
+    <div className="space-y-6 animate-fadeIn">
+      {/* Header Elegante */}
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 rounded-2xl shadow-2xl p-8 border border-blue-700/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
+              {isAdmin ? 'Todas las Facturas' : 'Mis Facturas'}
+            </h1>
+            <p className="text-blue-200 text-lg">
+              {isAdmin 
+                ? 'Historial completo de facturas de todos los usuarios' 
+                : 'Historial y seguimiento de tus facturas registradas'
+              }
+            </p>
+          </div>
+          <button 
+            onClick={exportToCSV}
+            className="flex items-center space-x-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all shadow-lg backdrop-blur-sm font-medium"
+          >
+            <Download className="w-5 h-5" />
+            <span>Exportar CSV</span>
+          </button>
         </div>
-        <Button onClick={exportToCSV} variant="secondary">
-          <Download className="w-4 h-4 mr-2" />
-          Exportar CSV
-        </Button>
       </div>
 
       {/* Estadísticas */}

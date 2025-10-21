@@ -63,23 +63,29 @@ export const BillsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Facturas</h1>
-          <p className="text-gray-600 mt-1">Ver y administrar todas las facturas de servicios</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Button variant="secondary" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            Exportar
-          </Button>
-          <Link to="/new-bill">
-            <Button>
-              <PlusCircle className="w-4 h-4 mr-2" />
-              Nueva Factura
-            </Button>
-          </Link>
+    <div className="space-y-6 animate-fadeIn">
+      {/* Header Elegante */}
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 rounded-2xl shadow-2xl p-8 border border-blue-700/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Gestión de Facturas</h1>
+            <p className="text-blue-200 text-lg">Administración completa de facturas de servicios</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <button 
+              onClick={handleExport}
+              className="flex items-center space-x-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all shadow-lg backdrop-blur-sm font-medium"
+            >
+              <Download className="w-5 h-5" />
+              <span>Exportar</span>
+            </button>
+            <Link to="/new-bill">
+              <button className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl transition-all shadow-lg font-medium">
+                <PlusCircle className="w-5 h-5" />
+                <span>Nueva Factura</span>
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
 

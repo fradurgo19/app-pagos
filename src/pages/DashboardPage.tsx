@@ -36,25 +36,28 @@ export const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Panel de Control</h1>
-          <p className="text-gray-600 mt-1">
-            Resumen de tus facturas de servicios
-            {selectedPeriods.length > 0 && (
-              <span className="ml-2 text-blue-600 font-medium">
-                ({selectedPeriods.length === 1 ? selectedPeriods[0] : `${selectedPeriods.length} periodos`})
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="w-72">
-          <PeriodSelector
-            availablePeriods={availablePeriods}
-            selectedPeriods={selectedPeriods}
-            onChange={setSelectedPeriods}
-          />
+    <div className="space-y-6 animate-fadeIn">
+      {/* Header Premium */}
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 rounded-2xl shadow-2xl p-8 border border-blue-700/50">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Panel de Control</h1>
+            <p className="text-blue-200 text-lg">
+              Análisis y resumen de facturas empresariales
+              {selectedPeriods.length > 0 && (
+                <span className="ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-white/20 text-white backdrop-blur-sm">
+                  {selectedPeriods.length === 1 ? selectedPeriods[0] : `${selectedPeriods.length} periodos`}
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="w-72">
+            <PeriodSelector
+              availablePeriods={availablePeriods}
+              selectedPeriods={selectedPeriods}
+              onChange={setSelectedPeriods}
+            />
+          </div>
         </div>
       </div>
 
@@ -95,26 +98,12 @@ export const DashboardPage: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <LocationChart 
           labels={locationData.labels} 
           data={locationData.data}
           title={selectedPeriods.length === 1 ? "Distribución por Centro de Costos" : "Distribución por Centro de Costos (Periodos Seleccionados)"}
         />
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
-          <h3 className="text-lg font-semibold mb-4">Acciones Rápidas</h3>
-          <div className="space-y-3">
-            <button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg py-3 px-4 transition-colors text-left">
-              Crear Nueva Factura
-            </button>
-            <button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg py-3 px-4 transition-colors text-left">
-              Ver Todas las Facturas
-            </button>
-            <button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg py-3 px-4 transition-colors text-left">
-              Exportar Reportes
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
