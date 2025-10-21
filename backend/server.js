@@ -318,43 +318,42 @@ app.get('/api/bills', authenticateToken, async (req, res) => {
   try {
     const { period, serviceType, location, status, search } = req.query;
     
-    let query = 'SELECT * FROM utility_bills WHERE user_id = $1';
-    const params = [req.user.id];
-    let paramCount = 1;
+    // Usar Supabase client para evitar problemas SASL
+    let query = supabaseDb
+      .from('utility_bills')
+      .select('*')
+      .eq('user_id', req.user.id);
 
     if (period) {
-      paramCount++;
-      query += ` AND period = $${paramCount}`;
-      params.push(period);
+      query = query.eq('period', period);
     }
 
     if (serviceType && serviceType !== 'all') {
-      paramCount++;
-      query += ` AND service_type = $${paramCount}`;
-      params.push(serviceType);
+      query = query.eq('service_type', serviceType);
     }
 
     if (location && location !== 'all') {
-      paramCount++;
-      query += ` AND location = $${paramCount}`;
-      params.push(location);
+      query = query.eq('location', location);
     }
 
     if (status && status !== 'all') {
-      paramCount++;
-      query += ` AND status = $${paramCount}`;
-      params.push(status);
+      query = query.eq('status', status);
     }
 
     if (search) {
-      paramCount++;
-      query += ` AND (invoice_number ILIKE $${paramCount} OR description ILIKE $${paramCount} OR provider ILIKE $${paramCount})`;
-      params.push(`%${search}%`);
+      query = query.or(`invoice_number.ilike.%${search}%,description.ilike.%${search}%,provider.ilike.%${search}%`);
     }
 
-    query += ' ORDER BY created_at DESC';
+    query = query.order('created_at', { ascending: false });
 
-    const result = await pool.query(query, params);
+    const { data: bills, error } = await query;
+
+    if (error) {
+      console.error('Error al obtener facturas:', error);
+      return res.status(500).json({ error: 'Error al obtener facturas' });
+    }
+
+    const result = { rows: bills || [] };
     
     // Transformar datos a camelCase para el frontend
     const transformedBills = result.rows.map(transformBillToFrontend);
@@ -420,36 +419,39 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
 
     console.log('📝 Datos normalizados:', JSON.stringify(normalizedBill, null, 2));
 
-    const result = await pool.query(
-      `INSERT INTO utility_bills (
-        user_id, service_type, provider, description, value, period,
-        invoice_number, total_amount, consumption, unit_of_measure,
-        cost_center, location, due_date, document_url, document_name,
-        status, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-      RETURNING *`,
-      [
-        req.user.id,
-        normalizedBill.serviceType,
-        normalizedBill.provider,
-        normalizedBill.description,
-        normalizedBill.value,
-        normalizedBill.period,
-        normalizedBill.invoiceNumber,
-        normalizedBill.totalAmount,
-        normalizedBill.consumption,
-        normalizedBill.unitOfMeasure,
-        normalizedBill.costCenter,
-        normalizedBill.location,
-        normalizedBill.dueDate,
-        normalizedBill.documentUrl,
-        normalizedBill.documentName,
-        normalizedBill.status,
-        normalizedBill.notes
-      ]
-    );
+    // Usar Supabase client para evitar problemas SASL
+    const { data: createdBill, error } = await supabaseDb
+      .from('utility_bills')
+      .insert({
+        user_id: req.user.id,
+        service_type: normalizedBill.serviceType,
+        provider: normalizedBill.provider,
+        description: normalizedBill.description,
+        value: normalizedBill.value,
+        period: normalizedBill.period,
+        invoice_number: normalizedBill.invoiceNumber,
+        total_amount: normalizedBill.totalAmount,
+        consumption: normalizedBill.consumption,
+        unit_of_measure: normalizedBill.unitOfMeasure,
+        cost_center: normalizedBill.costCenter,
+        location: normalizedBill.location,
+        due_date: normalizedBill.dueDate,
+        document_url: normalizedBill.documentUrl,
+        document_name: normalizedBill.documentName,
+        status: normalizedBill.status,
+        notes: normalizedBill.notes
+      })
+      .select()
+      .single();
 
-    console.log('✅ Factura creada en BD:', JSON.stringify(result.rows[0], null, 2));
+    if (error) {
+      console.error('Error al crear factura:', error);
+      return res.status(500).json({ error: 'Error al crear factura' });
+    }
+
+    console.log('✅ Factura creada en BD:', JSON.stringify(createdBill, null, 2));
+    
+    const result = { rows: [createdBill] };
     
     // Transformar a camelCase antes de enviar al frontend
     const transformedBill = transformBillToFrontend(result.rows[0]);
@@ -687,13 +689,14 @@ app.patch('/api/bills/:id/status', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    // Verificar que es coordinador
-    const userCheck = await pool.query(
-      'SELECT role FROM profiles WHERE id = $1',
-      [req.user.id]
-    );
+    // Verificar que es coordinador usando Supabase
+    const { data: userCheck, error: userError } = await supabaseDb
+      .from('profiles')
+      .select('role')
+      .eq('id', req.user.id)
+      .single();
 
-    if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'area_coordinator') {
+    if (userError || !userCheck || userCheck.role !== 'area_coordinator') {
       return res.status(403).json({ error: 'No tienes permisos para actualizar estados de facturas' });
     }
 
@@ -703,31 +706,27 @@ app.patch('/api/bills/:id/status', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Estado inválido. Solo se permite "pending" o "approved"' });
     }
 
-    // Si el estado es "approved", actualizar también approved_by y approved_at
-    let query;
-    let params;
+    // Actualizar usando Supabase
+    const updateData = { status };
     
     if (status === 'approved') {
-      query = `UPDATE utility_bills SET
-        status = $1,
-        approved_by = $2,
-        approved_at = NOW()
-      WHERE id = $3
-      RETURNING *`;
-      params = [status, req.user.id, id];
-    } else {
-      query = `UPDATE utility_bills SET
-        status = $1
-      WHERE id = $2
-      RETURNING *`;
-      params = [status, id];
+      updateData.approved_by = req.user.id;
+      updateData.approved_at = new Date().toISOString();
     }
 
-    const result = await pool.query(query, params);
+    const { data: updatedBill, error } = await supabaseDb
+      .from('utility_bills')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !updatedBill) {
+      console.error('Error al actualizar estado:', error);
       return res.status(404).json({ error: 'Factura no encontrada' });
     }
+
+    const result = { rows: [updatedBill] };
 
     res.json(transformBillToFrontend(result.rows[0]));
   } catch (error) {
