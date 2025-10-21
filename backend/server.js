@@ -269,16 +269,17 @@ app.post('/api/auth/login', async (req, res) => {
 // Obtener perfil del usuario autenticado
 app.get('/api/auth/profile', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, email, full_name, role, department, location, created_at, updated_at FROM profiles WHERE id = $1',
-      [req.user.id]
-    );
+    // Usar Supabase client para evitar problemas SASL
+    const { data: user, error } = await supabaseDb
+      .from('profiles')
+      .select('id, email, full_name, role, department, location, created_at, updated_at')
+      .eq('id', req.user.id)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (error || !user) {
+      console.error('Error getting profile:', error);
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-
-    const user = result.rows[0];
 
     res.json({
       id: user.id,
