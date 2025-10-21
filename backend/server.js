@@ -16,22 +16,12 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Crear directorio de uploads si no existe
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log('📁 Directorio de uploads creado');
-}
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Servir archivos estáticos (uploads)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Configurar Multer para upload de archivos en memoria (para Supabase)
 const storage = multer.memoryStorage();
