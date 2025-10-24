@@ -79,7 +79,15 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     console.log('📧 EMAIL_FROM configurado:', process.env.EMAIL_FROM ? 'Sí' : 'No');
     
     // Preparar datos del correo
+    // Resend requiere dominio verificado, usar onboarding@resend.dev si no tienes dominio propio
     const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+    
+    // Validar que el email tenga un dominio verificado en Resend
+    if (!fromEmail.includes('@resend.dev') && !fromEmail.includes('@partequipos.com')) {
+      console.error('❌ El dominio del EMAIL_FROM no está verificado en Resend');
+      console.error('❌ Opciones: 1) Usar onboarding@resend.dev 2) Verificar tu dominio en resend.com/domains');
+      return { success: false, error: 'Dominio no verificado en Resend' };
+    }
     const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
     const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
