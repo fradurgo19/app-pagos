@@ -1,7 +1,15 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-// Configuración de Resend usando su SDK oficial (más confiable que SMTP)
-const resend = new Resend(process.env.RESEND_API_KEY || process.env.EMAIL_PASSWORD);
+// Configuración SMTP de Resend usando nodemailer (funciona sin instalar paquetes adicionales)
+const transporter = nodemailer.createTransport({
+  host: 'smtp.resend.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: 'resend',
+    pass: process.env.RESEND_API_KEY || process.env.EMAIL_PASSWORD
+  }
+});
 
 // Verificar configuración de Resend
 export const verifyEmailConfig = async () => {
@@ -280,34 +288,22 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     // Nota: Los archivos en Supabase se envían como enlaces en el correo
     // Esto evita problemas de timeout en Vercel serverless con archivos grandes
 
-    // Enviar correo usando SDK de Resend
+    // Enviar correo usando SMTP de Resend
     console.log('📧 Intentando enviar correo...');
     console.log('📧 Destinatario:', mailOptions.to);
     console.log('📧 CC:', mailOptions.cc);
     console.log('📧 Asunto:', mailOptions.subject);
     
     try {
-      console.log('📧 Llamando a resend.emails.send()...');
+      console.log('📧 Llamando a transporter.sendMail()...');
       const startTime = Date.now();
       
-      const { data, error } = await resend.emails.send({
-        from: mailOptions.from.address,
-        to: mailOptions.to,
-        cc: mailOptions.cc,
-        subject: mailOptions.subject,
-        html: mailOptions.html
-      });
+      const info = await transporter.sendMail(mailOptions);
       
       const duration = Date.now() - startTime;
-      
-      if (error) {
-        console.error('❌ Error al enviar correo:', error);
-        return { success: false, error: error.message };
-      }
-      
       console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-      console.log('✅ Message ID:', data?.id);
-      return { success: true, messageId: data?.id };
+      console.log('✅ Message ID:', info.messageId);
+      return { success: true, messageId: info.messageId };
     } catch (sendError) {
       console.error('❌ Error al enviar correo:', sendError);
       console.error('❌ Mensaje del error:', sendError.message);
