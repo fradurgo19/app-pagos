@@ -5,6 +5,7 @@ const transporter = nodemailer.createTransport({
   host: 'smtp-mail.outlook.com',
   port: 587,
   secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.EMAIL_USER || 'analista.mantenimiento@partequipos.com',
     pass: process.env.EMAIL_PASSWORD || 'Fradurgo19.$'
@@ -13,9 +14,11 @@ const transporter = nodemailer.createTransport({
     ciphers: 'SSLv3',
     rejectUnauthorized: false
   },
-  connectionTimeout: 10000, // 10 segundos timeout
-  greetingTimeout: 10000,
-  socketTimeout: 10000
+  pool: true,
+  maxConnections: 1,
+  maxMessages: 10,
+  rateDelta: 1000,
+  rateLimit: 5
 });
 
 // Verificar configuración del transportador
