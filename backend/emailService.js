@@ -1,11 +1,11 @@
 import nodemailer from 'nodemailer';
 
 // Configuración del transportador de correo - OUTLOOK/Office365
+// Usar puerto 465 con SSL para evitar problemas de timeout en Vercel
 const transporter = nodemailer.createTransport({
   host: 'smtp-mail.outlook.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
+  port: 465,
+  secure: true,  // SSL
   auth: {
     user: process.env.EMAIL_USER || 'analista.mantenimiento@partequipos.com',
     pass: process.env.EMAIL_PASSWORD || 'Fradurgo19.$'
@@ -15,9 +15,9 @@ const transporter = nodemailer.createTransport({
     rejectUnauthorized: true
   },
   // Configuración para Vercel serverless
-  connectionTimeout: 20000,  // 20 segundos
-  greetingTimeout: 10000,     // 10 segundos
-  socketTimeout: 20000,       // 20 segundos
+  connectionTimeout: 15000,  // 15 segundos
+  greetingTimeout: 5000,     // 5 segundos
+  socketTimeout: 15000,      // 15 segundos
   disableFileAccess: true,
   disableUrlAccess: true
 });
@@ -314,12 +314,12 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log('📧 Llamando a transporter.sendMail()...');
       const startTime = Date.now();
       
-      // Timeout de 25 segundos para Outlook SMTP
+      // Timeout de 20 segundos para Outlook SMTP
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => {
-          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 25 segundos');
-          reject(new Error('Timeout after 25 seconds'));
-        }, 25000)
+          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 20 segundos');
+          reject(new Error('Timeout after 20 seconds'));
+        }, 20000)
       );
       
       const info = await Promise.race([
