@@ -1,36 +1,22 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// Configuración del transportador de correo - RESEND (GRATIS Y SIN RESTRICCIONES)
-// Resend funciona perfectamente en Vercel sin necesidad de autenticación en 2 pasos
-const transporter = nodemailer.createTransport({
-  host: 'smtp.resend.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: 'resend',
-    pass: process.env.RESEND_API_KEY || process.env.EMAIL_PASSWORD
-  }
-});
+// Configuración de Resend usando su SDK oficial (más confiable que SMTP)
+const resend = new Resend(process.env.RESEND_API_KEY || process.env.EMAIL_PASSWORD);
 
-// Verificar configuración del transportador
+// Verificar configuración de Resend
 export const verifyEmailConfig = async () => {
   try {
-    await transporter.verify();
+    if (!process.env.RESEND_API_KEY && !process.env.EMAIL_PASSWORD) {
+      console.log('⚠️  RESEND_API_KEY no configurada');
+      console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
+      return false;
+    }
     console.log('✅ Servidor de correo configurado correctamente');
-    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_USER);
-    console.log('📬 Correos llegarán a:', process.env.EMAIL_TO);
+    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'onboarding@resend.dev');
+    console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'fherrera@partequipos.com');
     return true;
   } catch (error) {
     console.error('❌ Error en configuración de correo:', error.message);
-    console.log('');
-    console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
-    console.log('');
-    console.log('💡 Configuración de Resend:');
-    console.log('   1. Crea cuenta gratis en: https://resend.com');
-    console.log('   2. Genera API Key en tu dashboard');
-    console.log('   3. Configura en Vercel: RESEND_API_KEY=tu-api-key');
-    console.log('   4. Verifica dominio: storageentrenapartequipos@gmail.com');
-    console.log('');
     return false;
   }
 };
@@ -294,40 +280,37 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     // Nota: Los archivos en Supabase se envían como enlaces en el correo
     // Esto evita problemas de timeout en Vercel serverless con archivos grandes
 
-    // Enviar correo
+    // Enviar correo usando SDK de Resend
     console.log('📧 Intentando enviar correo...');
     console.log('📧 Destinatario:', mailOptions.to);
     console.log('📧 CC:', mailOptions.cc);
     console.log('📧 Asunto:', mailOptions.subject);
     
     try {
-      console.log('📧 Llamando a transporter.sendMail()...');
+      console.log('📧 Llamando a resend.emails.send()...');
       const startTime = Date.now();
       
-      // Timeout de 20 segundos para Outlook SMTP
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => {
-          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 20 segundos');
-          reject(new Error('Timeout after 20 seconds'));
-        }, 20000)
-      );
-      
-      const info = await Promise.race([
-        transporter.sendMail(mailOptions),
-        timeoutPromise
-      ]);
+      const { data, error } = await resend.emails.send({
+        from: mailOptions.from.address,
+        to: mailOptions.to,
+        cc: mailOptions.cc,
+        subject: mailOptions.subject,
+        html: mailOptions.html
+      });
       
       const duration = Date.now() - startTime;
+      
+      if (error) {
+        console.error('❌ Error al enviar correo:', error);
+        return { success: false, error: error.message };
+      }
+      
       console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-      console.log('✅ Message ID:', info.messageId);
-      console.log('✅ Respuesta del servidor:', info.response);
-      return { success: true, messageId: info.messageId };
+      console.log('✅ Message ID:', data?.id);
+      return { success: true, messageId: data?.id };
     } catch (sendError) {
       console.error('❌ Error al enviar correo:', sendError);
-      console.error('❌ Código del error:', sendError.code);
       console.error('❌ Mensaje del error:', sendError.message);
-      console.error('❌ Command del error:', sendError.command);
-      console.error('❌ Stack:', sendError.stack);
       return { success: false, error: sendError.message };
     }
 
