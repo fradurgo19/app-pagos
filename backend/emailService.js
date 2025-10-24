@@ -96,7 +96,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     const mailOptions = {
       from: {
         name: 'Sistema de Gestión de Facturas',
-        address: process.env.EMAIL_FROM || 'storageentrenapartequipos@gmail.com'
+        address: process.env.EMAIL_FROM || 'onboarding@resend.dev'
       },
       to: 'fherrera@partequipos.com',
       cc: userEmail, // Copia al usuario que creó la factura
