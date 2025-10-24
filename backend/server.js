@@ -496,17 +496,20 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
       let attachmentPath = normalizedBill.documentUrl || null;
 
       // Enviar correo de forma asíncrona (no bloquea la respuesta)
-      sendNewBillNotification(transformedBill, userEmail, userName, attachmentPath)
-        .then(result => {
-          if (result.success) {
-            console.log(`✅ Correo enviado a fherrera@partequipos.com y ${userEmail}`);
-          } else {
-            console.error('❌ Error al enviar correo:', result.error);
-          }
-        })
-        .catch(error => {
-          console.error('❌ Error al enviar correo:', error);
-        });
+      // Usar setTimeout para evitar que bloquee la función principal
+      setTimeout(() => {
+        sendNewBillNotification(transformedBill, userEmail, userName, attachmentPath)
+          .then(result => {
+            if (result.success) {
+              console.log(`✅ Correo enviado a fherrera@partequipos.com y ${userEmail}`);
+            } else {
+              console.error('❌ Error al enviar correo:', result.error);
+            }
+          })
+          .catch(error => {
+            console.error('❌ Error al enviar correo:', error);
+          });
+      }, 100); // Esperar 100ms antes de enviar
     } else {
       console.error('❌ Error al obtener datos del usuario para correo:', userError);
       console.error('❌ Detalles del error:', JSON.stringify(userError, null, 2));
