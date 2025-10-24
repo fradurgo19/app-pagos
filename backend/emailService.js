@@ -261,7 +261,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
               </p>
 
               <div style="margin-top: 20px; text-align: center;">
-                <a href="http://localhost:5173/bills" 
+                <a href="https://app-pagos-rho.vercel.app/bills" 
                    style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
                   Ver en el Sistema
                 </a>
