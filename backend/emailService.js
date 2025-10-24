@@ -23,10 +23,10 @@ const createTransporter = () => {
     maxMessages: 1,
     rateDelta: 1000,
     rateLimit: 1,
-    // Timeouts apropiados
-    connectionTimeout: 60000, // 60 segundos
-    greetingTimeout: 30000,     // 30 segundos
-    socketTimeout: 60000       // 60 segundos
+    // Timeouts más cortos para Vercel serverless
+    connectionTimeout: 10000, // 10 segundos (máximo de Vercel gratis)
+    greetingTimeout: 10000,   // 10 segundos
+    socketTimeout: 10000      // 10 segundos
   });
 };
 
@@ -342,7 +342,14 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       
       try {
         console.log('📧 Conectando a SMTP...');
-        const info = await trans.sendMail(mailOptions);
+        
+        // Timeout manual de 15 segundos
+        const sendPromise = trans.sendMail(mailOptions);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 15 segundos')), 15000)
+        );
+        
+        const info = await Promise.race([sendPromise, timeoutPromise]);
         
         const duration = Date.now() - startTime;
         
@@ -354,6 +361,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
         
         return { success: true, messageId: info.messageId };
       } catch (mailError) {
+        console.error('❌ Error durante envío:', mailError.message);
         // Cerrar transporte si hay error
         trans.close();
         throw mailError;
