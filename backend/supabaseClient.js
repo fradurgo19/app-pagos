@@ -1,7 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+// Para ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cargar variables de entorno (busca .env en la raíz del proyecto)
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Cliente para Base de Datos (tablas)
 const supabaseDbUrl = process.env.VITE_SUPABASE_URL;

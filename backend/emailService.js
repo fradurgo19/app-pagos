@@ -11,14 +11,12 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD || 'Fradurgo19.$'
   },
   tls: {
-    ciphers: 'SSLv3',
-    rejectUnauthorized: false
+    ciphers: 'TLSv1.2',
+    rejectUnauthorized: true
   },
-  pool: true,
-  maxConnections: 1,
-  maxMessages: 10,
-  rateDelta: 1000,
-  rateLimit: 5
+  connectionTimeout: 60000, // 60 segundos
+  greetingTimeout: 30000,    // 30 segundos
+  socketTimeout: 60000       // 60 segundos
 });
 
 // Verificar configuración del transportador
@@ -91,6 +89,31 @@ const translateStatus = (status) => {
     'overdue': 'Vencida'
   };
   return translations[status] || status;
+};
+
+// Descargar archivo desde URL (Supabase)
+const downloadFile = (url) => {
+  return new Promise((resolve, reject) => {
+    console.log('📥 Descargando archivo desde:', url);
+    
+    const protocol = url.startsWith('https') ? https : http;
+    
+    protocol.get(url, (response) => {
+      if (response.statusCode !== 200) {
+        reject(new Error(`Error al descargar archivo: ${response.statusCode}`));
+        return;
+      }
+
+      const chunks = [];
+      response.on('data', (chunk) => chunks.push(chunk));
+      response.on('end', () => {
+        const buffer = Buffer.concat(chunks);
+        console.log(`✅ Archivo descargado: ${buffer.length} bytes`);
+        resolve(buffer);
+      });
+      response.on('error', reject);
+    }).on('error', reject);
+  });
 };
 
 // Enviar notificación de nueva factura
@@ -271,6 +294,17 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
                 Por favor, revisa esta factura en el sistema y apruébala si corresponde.
               </p>
 
+              ${billData.documentUrl ? `
+              <div style="margin-top: 20px; padding: 15px; background-color: #ecfdf5; border-radius: 6px; border-left: 4px solid #10b981;">
+                <p style="margin: 0; font-size: 14px; color: #065f46;">
+                  <strong>📎 Documento adjunto:</strong> 
+                  <a href="${billData.documentUrl}" style="color: #10b981; text-decoration: underline;">
+                    ${billData.documentName || 'Ver documento'}
+                  </a>
+                </p>
+              </div>
+              ` : ''}
+
               <div style="margin-top: 20px; text-align: center;">
                 <a href="https://app-pagos-rho.vercel.app/bills" 
                    style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
@@ -289,13 +323,23 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       `
     };
 
-    // Agregar adjunto si existe (URL de Supabase)
+    // Descargar y adjuntar archivo si existe
     if (attachmentPath) {
-      mailOptions.attachments = [{
-        filename: billData.documentName || 'factura.pdf',
-        path: attachmentPath, // URL pública de Supabase
-        href: attachmentPath
-      }];
+      try {
+        console.log('📎 Preparando adjunto...');
+        const fileBuffer = await downloadFile(attachmentPath);
+        
+        mailOptions.attachments = [{
+          filename: billData.documentName || 'factura.pdf',
+          content: fileBuffer
+        }];
+        
+        console.log('✅ Archivo adjunto preparado:', billData.documentName);
+      } catch (downloadError) {
+        console.error('⚠️ Error al descargar archivo para adjuntar:', downloadError.message);
+        console.log('⚠️ El correo se enviará sin adjunto, pero con enlace al documento');
+        // El correo se enviará sin adjunto pero con el enlace al documento
+      }
     }
 
     // Enviar correo
@@ -308,12 +352,12 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log('📧 Llamando a transporter.sendMail()...');
       const startTime = Date.now();
       
-      // Timeout más corto para debugging (10 segundos)
+      // Timeout de 60 segundos para Outlook (incluye descarga de archivo)
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => {
-          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 10 segundos');
-          reject(new Error('Timeout after 10 seconds'));
-        }, 10000)
+          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 60 segundos');
+          reject(new Error('Timeout after 60 seconds'));
+        }, 60000)
       );
       
       const info = await Promise.race([

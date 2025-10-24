@@ -10,11 +10,12 @@ import fs from 'fs';
 import { sendNewBillNotification, verifyEmailConfig } from './emailService.js';
 import { uploadToSupabase, supabaseDb } from './supabaseClient.js';
 
-dotenv.config();
-
 // Para ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Cargar variables de entorno (busca .env en la raíz del proyecto)
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -496,8 +497,8 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
       let attachmentPath = normalizedBill.documentUrl || null;
 
       // Enviar correo de forma asíncrona (no bloquea la respuesta)
-      // Usar setTimeout para evitar que bloquee la función principal
-      setTimeout(() => {
+      // En producción (Vercel serverless), usar setImmediate evita problemas de timeout
+      setImmediate(() => {
         sendNewBillNotification(transformedBill, userEmail, userName, attachmentPath)
           .then(result => {
             if (result.success) {
@@ -509,7 +510,7 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
           .catch(error => {
             console.error('❌ Error al enviar correo:', error);
           });
-      }, 100); // Esperar 100ms antes de enviar
+      });
     } else {
       console.error('❌ Error al obtener datos del usuario para correo:', userError);
       console.error('❌ Detalles del error:', JSON.stringify(userError, null, 2));
