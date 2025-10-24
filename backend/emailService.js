@@ -1,40 +1,43 @@
 import nodemailer from 'nodemailer';
 
-// Función para crear un transporte SMTP nuevo por cada envío
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: 'smtp-mail.outlook.com',
-    port: 587,
-    secure: false,
+// Transporte SMTP singleton (igual que el otro proyecto)
+let transporter = null;
+
+// Función para inicializar el transporte
+const initializeTransporter = () => {
+  if (transporter) return transporter;
+  
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: process.env.SMTP_SECURE === 'true',
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    },
-    tls: {
-      ciphers: 'SSLv3',
-      rejectUnauthorized: false
-    },
-    connectionTimeout: 5000, // 5 segundos para conectar
-    greetingTimeout: 5000, // 5 segundos para saludo
-    socketTimeout: 5000 // 5 segundos para operaciones socket
+      user: process.env.SMTP_USER || process.env.EMAIL_USER,
+      pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
+    }
   });
+  
+  return transporter;
 };
 
 // Verificar configuración de Outlook SMTP
 export const verifyEmailConfig = async () => {
   try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.log('⚠️  EMAIL_USER o EMAIL_PASSWORD no configurados');
+    const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+    const pass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
+    
+    if (!user || !pass) {
+      console.log('⚠️  SMTP_USER/SMTP_PASS o EMAIL_USER/EMAIL_PASSWORD no configurados');
       console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
       return false;
     }
     
-    // Verificar conexión SMTP
-    const transporter = createTransporter();
-    await transporter.verify();
+    // Inicializar y verificar conexión SMTP
+    const trans = initializeTransporter();
+    await trans.verify();
     
     console.log('✅ Servidor de correo Outlook configurado correctamente');
-    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_USER);
+    console.log('📧 Correos se enviarán desde:', user);
     console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com');
     return true;
   } catch (error) {
@@ -97,11 +100,15 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
   try {
     console.log('📧 Iniciando envío de correo...');
     console.log('📧 Usuario:', userName, userEmail);
-    console.log('📧 EMAIL_USER configurado:', process.env.EMAIL_USER ? 'Sí' : 'No');
-    console.log('📧 EMAIL_PASSWORD configurado:', process.env.EMAIL_PASSWORD ? 'Sí' : 'No');
+    
+    const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+    const pass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
+    
+    console.log('📧 SMTP_USER configurado:', user ? 'Sí' : 'No');
+    console.log('📧 SMTP_PASS configurado:', pass ? 'Sí' : 'No');
     
     // Preparar datos del correo
-    const fromEmail = process.env.EMAIL_USER;
+    const fromEmail = user;
     const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
     const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
@@ -316,19 +323,10 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       
       console.log('📧 MailOptions configurado, enviando...');
       
-      // Crear transporte nuevo para este envío
-      const transporter = createTransporter();
+      // Usar transporte singleton
+      const trans = initializeTransporter();
       
-      // Agregar timeout manual de 8 segundos
-      const sendPromise = transporter.sendMail(mailOptions);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 8 segundos')), 8000)
-      );
-      
-      const info = await Promise.race([sendPromise, timeoutPromise]);
-      
-      // Cerrar transporte después del envío
-      transporter.close();
+      const info = await trans.sendMail(mailOptions);
       
       const duration = Date.now() - startTime;
       
