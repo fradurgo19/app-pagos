@@ -294,13 +294,25 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
 
     // Enviar correo
     console.log('📧 Intentando enviar correo...');
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Correo enviado exitosamente:', info.messageId);
-    console.log('✅ Respuesta del servidor:', info.response);
-    return { success: true, messageId: info.messageId };
+    console.log('📧 Destinatario:', mailOptions.to);
+    console.log('📧 CC:', mailOptions.cc);
+    console.log('📧 Asunto:', mailOptions.subject);
+    
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('✅ Correo enviado exitosamente:', info.messageId);
+      console.log('✅ Respuesta del servidor:', info.response);
+      return { success: true, messageId: info.messageId };
+    } catch (sendError) {
+      console.error('❌ Error al enviar correo:', sendError);
+      console.error('❌ Código del error:', sendError.code);
+      console.error('❌ Mensaje del error:', sendError.message);
+      console.error('❌ Command del error:', sendError.command);
+      return { success: false, error: sendError.message };
+    }
 
   } catch (error) {
-    console.error('❌ Error al enviar correo:', error);
+    console.error('❌ Error general al enviar correo:', error);
     console.error('❌ Detalles del error:', error.message);
     console.error('❌ Stack trace:', error.stack);
     return { success: false, error: error.message };
