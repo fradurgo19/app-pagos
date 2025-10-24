@@ -21,6 +21,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState<string>('');
+  const [isDragging, setIsDragging] = useState(false);
+
+  const validateFile = (file: File) => {
+    setLocalError('');
+
+    if (file.size > maxSize) {
+      setLocalError(`El tamaño del archivo debe ser menor a ${maxSize / (1024 * 1024)}MB`);
+      return false;
+    }
+
+    return true;
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -31,13 +43,48 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       return;
     }
 
-    if (file.size > maxSize) {
-      setLocalError(`El tamaño del archivo debe ser menor a ${maxSize / (1024 * 1024)}MB`);
+    if (validateFile(file)) {
+      onFileSelect(file);
+    } else {
       onFileSelect(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    
+    if (!file) {
+      setLocalError('No se pudo obtener el archivo');
       return;
     }
 
-    onFileSelect(file);
+    if (validateFile(file)) {
+      onFileSelect(file);
+    } else {
+      onFileSelect(null);
+    }
   };
 
   const handleRemove = () => {
@@ -60,8 +107,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       {!currentFile ? (
         <div
           onClick={() => fileInputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-            displayError ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+            displayError 
+              ? 'border-red-300 bg-red-50' 
+              : isDragging 
+                ? 'border-blue-500 bg-blue-100' 
+                : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
           }`}
         >
           <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
