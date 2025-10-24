@@ -91,31 +91,6 @@ const translateStatus = (status) => {
   return translations[status] || status;
 };
 
-// Descargar archivo desde URL (Supabase)
-const downloadFile = (url) => {
-  return new Promise((resolve, reject) => {
-    console.log('📥 Descargando archivo desde:', url);
-    
-    const protocol = url.startsWith('https') ? https : http;
-    
-    protocol.get(url, (response) => {
-      if (response.statusCode !== 200) {
-        reject(new Error(`Error al descargar archivo: ${response.statusCode}`));
-        return;
-      }
-
-      const chunks = [];
-      response.on('data', (chunk) => chunks.push(chunk));
-      response.on('end', () => {
-        const buffer = Buffer.concat(chunks);
-        console.log(`✅ Archivo descargado: ${buffer.length} bytes`);
-        resolve(buffer);
-      });
-      response.on('error', reject);
-    }).on('error', reject);
-  });
-};
-
 // Enviar notificación de nueva factura
 export const sendNewBillNotification = async (billData, userEmail, userName, attachmentPath = null) => {
   try {
@@ -323,24 +298,8 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       `
     };
 
-    // Descargar y adjuntar archivo si existe
-    if (attachmentPath) {
-      try {
-        console.log('📎 Preparando adjunto...');
-        const fileBuffer = await downloadFile(attachmentPath);
-        
-        mailOptions.attachments = [{
-          filename: billData.documentName || 'factura.pdf',
-          content: fileBuffer
-        }];
-        
-        console.log('✅ Archivo adjunto preparado:', billData.documentName);
-      } catch (downloadError) {
-        console.error('⚠️ Error al descargar archivo para adjuntar:', downloadError.message);
-        console.log('⚠️ El correo se enviará sin adjunto, pero con enlace al documento');
-        // El correo se enviará sin adjunto pero con el enlace al documento
-      }
-    }
+    // Nota: Los archivos en Supabase se envían como enlaces en el correo
+    // Esto evita problemas de timeout en Vercel serverless con archivos grandes
 
     // Enviar correo
     console.log('📧 Intentando enviar correo...');
@@ -352,12 +311,12 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log('📧 Llamando a transporter.sendMail()...');
       const startTime = Date.now();
       
-      // Timeout de 60 segundos para Outlook (incluye descarga de archivo)
+      // Timeout de 30 segundos para Outlook
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => {
-          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 60 segundos');
-          reject(new Error('Timeout after 60 seconds'));
-        }, 60000)
+          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 30 segundos');
+          reject(new Error('Timeout after 30 seconds'));
+        }, 30000)
       );
       
       const info = await Promise.race([
