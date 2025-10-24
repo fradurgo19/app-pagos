@@ -497,24 +497,22 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
       let attachmentPath = normalizedBill.documentUrl || null;
 
       // Enviar correo de forma asíncrona (no bloquea la respuesta)
-      // En producción (Vercel serverless), usar setImmediate evita problemas de timeout
+      // Fire-and-forget: ejecutar sin esperar resultado
       const emailStartTime = Date.now();
-      setImmediate(() => {
-        sendNewBillNotification(transformedBill, userEmail, userName, attachmentPath)
-          .then(result => {
-            const emailDuration = Date.now() - emailStartTime;
-            if (result.success) {
-              console.log(`✅ Correo enviado exitosamente en ${emailDuration}ms`);
-              console.log(`✅ Correo enviado a fherrera@partequipos.com y ${userEmail}`);
-            } else {
-              console.error(`❌ Error al enviar correo (después de ${emailDuration}ms):`, result.error);
-            }
-          })
-          .catch(error => {
-            const emailDuration = Date.now() - emailStartTime;
-            console.error(`❌ Error al enviar correo (después de ${emailDuration}ms):`, error);
-          });
-      });
+      sendNewBillNotification(transformedBill, userEmail, userName, attachmentPath)
+        .then(result => {
+          const emailDuration = Date.now() - emailStartTime;
+          if (result.success) {
+            console.log(`✅ Correo enviado exitosamente en ${emailDuration}ms`);
+            console.log(`✅ Correo enviado a fherrera@partequipos.com y ${userEmail}`);
+          } else {
+            console.error(`❌ Error al enviar correo (después de ${emailDuration}ms):`, result.error);
+          }
+        })
+        .catch(error => {
+          const emailDuration = Date.now() - emailStartTime;
+          console.error(`❌ Error al enviar correo (después de ${emailDuration}ms):`, error);
+        });
     } else {
       console.error('❌ Error al obtener datos del usuario para correo:', userError);
       console.error('❌ Detalles del error:', JSON.stringify(userError, null, 2));
