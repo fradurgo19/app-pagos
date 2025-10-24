@@ -1,23 +1,33 @@
 import nodemailer from 'nodemailer';
 
-// Transporte SMTP singleton (igual que el otro proyecto)
-let transporter = null;
-
-// Función para inicializar el transporte
-const initializeTransporter = () => {
-  if (transporter) return transporter;
+// Crear transporte SMTP NUEVO por cada envío (crítico para serverless)
+const createTransporter = () => {
+  const host = process.env.SMTP_HOST || 'smtp-mail.outlook.com';
+  const port = parseInt(process.env.SMTP_PORT || '587');
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
   
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
+  console.log('📧 Creando transporte SMTP nuevo:', { host, port, user: user?.substring(0, 3) + '***' });
+  
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: false, // Outlook usa STARTTLS en puerto 587
     auth: {
-      user: process.env.SMTP_USER || process.env.EMAIL_USER,
-      pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
-    }
+      user,
+      pass
+    },
+    // Configuración optimizada para serverless
+    pool: false, // No mantener pool de conexiones
+    maxConnections: 1,
+    maxMessages: 1,
+    rateDelta: 1000,
+    rateLimit: 1,
+    // Timeouts apropiados
+    connectionTimeout: 60000, // 60 segundos
+    greetingTimeout: 30000,     // 30 segundos
+    socketTimeout: 60000       // 60 segundos
   });
-  
-  return transporter;
 };
 
 // Verificar configuración de Outlook SMTP
@@ -32,13 +42,17 @@ export const verifyEmailConfig = async () => {
       return false;
     }
     
-    // Inicializar y verificar conexión SMTP
-    const trans = initializeTransporter();
+    // Crear transporte nuevo y verificar conexión SMTP
+    const trans = createTransporter();
     await trans.verify();
     
     console.log('✅ Servidor de correo Outlook configurado correctamente');
     console.log('📧 Correos se enviarán desde:', user);
     console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com');
+    
+    // Cerrar conexión después de verificar
+    trans.close();
+    
     return true;
   } catch (error) {
     console.error('❌ Error en configuración de correo:', error.message);
@@ -323,16 +337,27 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       
       console.log('📧 MailOptions configurado, enviando...');
       
-      // Usar transporte singleton
-      const trans = initializeTransporter();
+      // Crear transporte NUEVO para este envío (crítico en serverless)
+      const trans = createTransporter();
       
-      const info = await trans.sendMail(mailOptions);
-      
-      const duration = Date.now() - startTime;
-      
-      console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-      console.log('✅ Message ID:', info.messageId);
-      return { success: true, messageId: info.messageId };
+      try {
+        console.log('📧 Conectando a SMTP...');
+        const info = await trans.sendMail(mailOptions);
+        
+        const duration = Date.now() - startTime;
+        
+        console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
+        console.log('✅ Message ID:', info.messageId);
+        
+        // Cerrar transporte después del envío exitoso
+        trans.close();
+        
+        return { success: true, messageId: info.messageId };
+      } catch (mailError) {
+        // Cerrar transporte si hay error
+        trans.close();
+        throw mailError;
+      }
     } catch (sendError) {
       console.error('❌ Error al enviar correo:', sendError);
       console.error('❌ Mensaje del error:', sendError.message);
