@@ -160,11 +160,12 @@ export const ReportsPage: React.FC = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Periodo', 'Tipo de Servicio', 'Proveedor', 'N° Factura', 'Monto', 'Estado', 'Fecha Vencimiento'];
+    const headers = ['Periodo', 'Tipo de Servicio', 'Proveedor', 'N° Contrato', 'N° Factura', 'Monto', 'Estado', 'Fecha Vencimiento'];
     const rows = bills.map(bill => [
       bill.period,
       getServiceTypeLabel(bill.serviceType),
       bill.provider || '',
+      bill.contractNumber || '',
       bill.invoiceNumber || '',
       bill.totalAmount.toString(),
       bill.status,
@@ -353,7 +354,7 @@ export const ReportsPage: React.FC = () => {
                       key={bill.id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
-                      <div className={`flex-1 grid grid-cols-1 ${isAdmin ? 'md:grid-cols-6' : 'md:grid-cols-5'} gap-4`}>
+                      <div className={`flex-1 grid grid-cols-1 ${isAdmin ? 'md:grid-cols-7' : 'md:grid-cols-6'} gap-4`}>
                         {isAdmin && (
                           <div>
                             <p className="text-xs text-gray-500 mb-1">Usuario</p>
@@ -376,6 +377,11 @@ export const ReportsPage: React.FC = () => {
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Proveedor</p>
                           <p className="font-medium text-gray-900">{bill.provider || 'N/A'}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">N° Contrato</p>
+                          <p className="font-medium text-gray-900">{bill.contractNumber || 'N/A'}</p>
                         </div>
 
                         <div>

@@ -17,6 +17,7 @@ export interface UtilityBill {
   value: number;
   period: string;
   invoiceNumber?: string;
+  contractNumber?: string;
   totalAmount: number;
   consumption?: number;
   unitOfMeasure?: UnitType;
@@ -40,6 +41,7 @@ export interface UtilityBillFormData {
   value: string;
   period: string;
   invoiceNumber: string;
+  contractNumber: string;
   totalAmount: string;
   consumption: string;
   unitOfMeasure: UnitType;

@@ -20,6 +20,7 @@ const initialFormData: UtilityBillFormData = {
   value: '',
   period: getCurrentPeriod(),
   invoiceNumber: '',
+  contractNumber: '',
   totalAmount: '',
   consumption: '',
   unitOfMeasure: 'kWh',
@@ -264,6 +265,7 @@ export const BillForm: React.FC = () => {
         value: parseCurrencyInput(formData.value),
         period: formData.period,
         invoiceNumber: formData.invoiceNumber,
+        contractNumber: formData.contractNumber,
         totalAmount: parseCurrencyInput(formData.totalAmount),
         consumption: formData.consumption ? parseFloat(formData.consumption) : undefined,
         unitOfMeasure: formData.unitOfMeasure as UnitType,
@@ -327,6 +329,14 @@ export const BillForm: React.FC = () => {
             onChange={(e) => handleInputChange('invoiceNumber', e.target.value)}
             placeholder="FAC-12345"
             error={errors.invoiceNumber}
+          />
+
+          <Input
+            label="Número de Contrato"
+            value={formData.contractNumber}
+            onChange={(e) => handleInputChange('contractNumber', e.target.value)}
+            placeholder="CTR-12345"
+            error={errors.contractNumber}
           />
 
           <Input

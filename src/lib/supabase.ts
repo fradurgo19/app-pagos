@@ -55,6 +55,7 @@ export interface Database {
           value: number;
           period: string;
           invoice_number: string | null;
+          contract_number: string | null;
           total_amount: number;
           consumption: number | null;
           unit_of_measure: string | null;
@@ -78,6 +79,7 @@ export interface Database {
           value: number;
           period: string;
           invoice_number?: string;
+          contract_number?: string;
           total_amount: number;
           consumption?: number;
           unit_of_measure?: string;
@@ -96,6 +98,7 @@ export interface Database {
           value?: number;
           period?: string;
           invoice_number?: string;
+          contract_number?: string;
           total_amount?: number;
           consumption?: number;
           unit_of_measure?: string;

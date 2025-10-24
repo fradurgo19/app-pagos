@@ -1,0 +1,89 @@
+=================================================================
+  MIGRACIÓN EN PRODUCCIÓN - CAMPO "NÚMERO DE CONTRATO"
+=================================================================
+
+IMPORTANTE: Este cambio debe ejecutarse en la base de datos 
+de producción de Supabase ANTES de desplegar el código actualizado.
+
+=================================================================
+PASO 1: Ejecutar Migración en Supabase
+=================================================================
+
+Opción A - Usando SQL Editor (RECOMENDADO):
+
+1. Ve a: https://app.supabase.com
+2. Inicia sesión y selecciona el proyecto: rafmynmmenebreqeagvm
+3. Ve a "SQL Editor" en el menú lateral
+4. Haz clic en "New query"
+5. Copia y pega el siguiente SQL:
+
+-----------------------------------------------------------
+ALTER TABLE utility_bills ADD COLUMN IF NOT EXISTS contract_number TEXT;
+-----------------------------------------------------------
+
+6. Haz clic en "Run" (o presiona Ctrl+Enter)
+7. Deberías ver: "Success. No rows returned"
+
+Opción B - Usando psql (si tienes acceso directo):
+
+Copia el comando SQL y ejecútalo en psql:
+psql "tu-conexion-string-de-supabase" -c "ALTER TABLE utility_bills ADD COLUMN IF NOT EXISTS contract_number TEXT;"
+
+=================================================================
+PASO 2: Verificar Migración
+=================================================================
+
+Ejecuta esta consulta en SQL Editor:
+
+SELECT column_name, data_type, is_nullable 
+FROM information_schema.columns 
+WHERE table_name = 'utility_bills' 
+AND column_name = 'contract_number';
+
+Debe mostrar:
+- column_name: contract_number
+- data_type: text
+- is_nullable: YES
+
+=================================================================
+PASO 3: Desplegar Código Actualizado
+=================================================================
+
+1. Hacer commit de los cambios:
+   git add .
+   git commit -m "feat: Add contract_number field to invoices"
+   git push origin main
+
+2. Vercel desplegará automáticamente los cambios
+
+3. Verificar en producción:
+   https://app-pagos-rho.vercel.app
+
+=================================================================
+ARCHIVOS QUE FUERON MODIFICADOS:
+=================================================================
+
+✅ Database:
+   - supabase/migrations/20250115000000_add_contract_number.sql
+   - database/setup-local-postgres.sql
+
+✅ Frontend:
+   - src/types/index.ts
+   - src/lib/supabase.ts
+   - src/organisms/BillForm.tsx
+   - src/organisms/BillsTable.tsx
+   - src/pages/ReportsPage.tsx
+
+✅ Backend:
+   - backend/server.js
+
+=================================================================
+ESTADO ACTUAL:
+=================================================================
+
+✅ Migración ejecutada en: BASE DE DATOS LOCAL
+⏳ Migración pendiente en: PRODUCCIÓN (Supabase)
+⏳ Código desplegado: PENDIENTE
+
+=================================================================
+

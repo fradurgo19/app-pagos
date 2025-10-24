@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS utility_bills (
   value numeric NOT NULL CHECK (value >= 0),
   period text NOT NULL,
   invoice_number text,
+  contract_number text,
   total_amount numeric NOT NULL CHECK (total_amount >= 0),
   consumption numeric CHECK (consumption >= 0),
   unit_of_measure text,

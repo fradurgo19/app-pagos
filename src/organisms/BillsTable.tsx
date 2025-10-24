@@ -181,6 +181,9 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Proveedor
               </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                N° Contrato
+              </th>
               <th
                 className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('totalAmount')}
@@ -210,7 +213,7 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
           <tbody className="bg-white divide-y divide-gray-200">
             {sortedBills.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={10} className="px-4 py-12 text-center text-gray-500">
                   No se encontraron facturas
                 </td>
               </tr>
@@ -234,6 +237,9 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                     {bill.provider || '-'}
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {bill.contractNumber || '-'}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {formatCurrency(bill.totalAmount)}
@@ -302,7 +308,7 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
             {/* Fila de totales */}
             {bills.length > 0 && (
               <tr className="bg-blue-50 border-t-2 border-blue-200 font-bold">
-                <td className="px-4 py-4" colSpan={4}>
+                <td className="px-4 py-4" colSpan={5}>
                   <div className="text-right text-gray-900 font-bold">
                     TOTAL:
                   </div>
