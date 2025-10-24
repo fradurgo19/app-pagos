@@ -14,9 +14,12 @@ const transporter = nodemailer.createTransport({
     ciphers: 'TLSv1.2',
     rejectUnauthorized: true
   },
-  connectionTimeout: 60000, // 60 segundos
-  greetingTimeout: 30000,    // 30 segundos
-  socketTimeout: 60000       // 60 segundos
+  // Optimizado para Vercel serverless
+  connectionTimeout: 10000,  // 10 segundos (más rápido)
+  greetingTimeout: 5000,     // 5 segundos
+  socketTimeout: 10000,      // 10 segundos
+  maxConnections: 1,         // Una conexión a la vez
+  maxMessages: 3              // Máximo 3 mensajes por conexión
 });
 
 // Verificar configuración del transportador

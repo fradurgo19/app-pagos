@@ -498,17 +498,21 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
 
       // Enviar correo de forma asíncrona (no bloquea la respuesta)
       // En producción (Vercel serverless), usar setImmediate evita problemas de timeout
+      const emailStartTime = Date.now();
       setImmediate(() => {
         sendNewBillNotification(transformedBill, userEmail, userName, attachmentPath)
           .then(result => {
+            const emailDuration = Date.now() - emailStartTime;
             if (result.success) {
+              console.log(`✅ Correo enviado exitosamente en ${emailDuration}ms`);
               console.log(`✅ Correo enviado a fherrera@partequipos.com y ${userEmail}`);
             } else {
-              console.error('❌ Error al enviar correo:', result.error);
+              console.error(`❌ Error al enviar correo (después de ${emailDuration}ms):`, result.error);
             }
           })
           .catch(error => {
-            console.error('❌ Error al enviar correo:', error);
+            const emailDuration = Date.now() - emailStartTime;
+            console.error(`❌ Error al enviar correo (después de ${emailDuration}ms):`, error);
           });
       });
     } else {
