@@ -84,7 +84,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
         name: 'Sistema de Gestión de Facturas',
         address: process.env.EMAIL_FROM || 'onboarding@resend.dev'
       },
-      to: 'fherrera@partequipos.com',
+      to: process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com',
       cc: userEmail, // Copia al usuario que creó la factura
       subject: `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`,
       html: `
