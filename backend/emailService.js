@@ -307,12 +307,20 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     try {
       console.log('📧 Llamando a transporter.sendMail()...');
       const startTime = Date.now();
+      
+      // Timeout más corto para debugging (10 segundos)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => {
+          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 10 segundos');
+          reject(new Error('Timeout after 10 seconds'));
+        }, 10000)
+      );
+      
       const info = await Promise.race([
         transporter.sendMail(mailOptions),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
-        )
+        timeoutPromise
       ]);
+      
       const duration = Date.now() - startTime;
       console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
       console.log('✅ Message ID:', info.messageId);
@@ -323,6 +331,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.error('❌ Código del error:', sendError.code);
       console.error('❌ Mensaje del error:', sendError.message);
       console.error('❌ Command del error:', sendError.command);
+      console.error('❌ Stack:', sendError.stack);
       return { success: false, error: sendError.message };
     }
 
