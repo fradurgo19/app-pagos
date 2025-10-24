@@ -1,19 +1,34 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-// Inicializar cliente de Resend
-const resend = new Resend(process.env.RESEND_API_KEY || process.env.EMAIL_PASSWORD);
+// Configuración SMTP de Outlook/Office365
+const transporter = nodemailer.createTransport({
+  host: 'smtp-mail.outlook.com',
+  port: 587,
+  secure: false, // true para 465, false para otros puertos
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  },
+  tls: {
+    ciphers: 'SSLv3'
+  }
+});
 
-// Verificar configuración de Resend
+// Verificar configuración de Outlook SMTP
 export const verifyEmailConfig = async () => {
   try {
-    if (!process.env.RESEND_API_KEY && !process.env.EMAIL_PASSWORD) {
-      console.log('⚠️  RESEND_API_KEY no configurada');
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.log('⚠️  EMAIL_USER o EMAIL_PASSWORD no configurados');
       console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
       return false;
     }
-    console.log('✅ Servidor de correo configurado correctamente');
-    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'onboarding@resend.dev');
-    console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'fherrera@partequipos.com');
+    
+    // Verificar conexión SMTP
+    await transporter.verify();
+    
+    console.log('✅ Servidor de correo Outlook configurado correctamente');
+    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_USER);
+    console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com');
     return true;
   } catch (error) {
     console.error('❌ Error en configuración de correo:', error.message);
@@ -75,19 +90,11 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
   try {
     console.log('📧 Iniciando envío de correo...');
     console.log('📧 Usuario:', userName, userEmail);
-    console.log('📧 RESEND_API_KEY configurado:', process.env.RESEND_API_KEY ? 'Sí' : 'No');
-    console.log('📧 EMAIL_FROM configurado:', process.env.EMAIL_FROM ? 'Sí' : 'No');
+    console.log('📧 EMAIL_USER configurado:', process.env.EMAIL_USER ? 'Sí' : 'No');
+    console.log('📧 EMAIL_PASSWORD configurado:', process.env.EMAIL_PASSWORD ? 'Sí' : 'No');
     
     // Preparar datos del correo
-    // Resend requiere dominio verificado, usar onboarding@resend.dev si no tienes dominio propio
-    let fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
-    
-    // Validar que el email tenga un dominio verificado en Resend
-    if (!fromEmail.includes('@resend.dev') && !fromEmail.includes('@partequipos.com')) {
-      console.error('❌ El dominio del EMAIL_FROM no está verificado en Resend');
-      console.error('❌ Usando onboarding@resend.dev como fallback');
-      fromEmail = 'onboarding@resend.dev';
-    }
+    const fromEmail = process.env.EMAIL_USER;
     const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
     const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
@@ -282,38 +289,35 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     // Nota: Los archivos en Supabase se envían como enlaces en el correo
     // Esto evita problemas de timeout en Vercel serverless con archivos grandes
 
-    // Enviar correo usando API de Resend
+    // Enviar correo usando SMTP de Outlook
     console.log('📧 Intentando enviar correo...');
     console.log('📧 Destinatario:', toEmail);
     console.log('📧 CC:', userEmail);
     console.log('📧 Asunto:', subject);
     
     try {
-      console.log('📧 Llamando a resend.emails.send()...');
+      console.log('📧 Llamando a transporter.sendMail()...');
       const startTime = Date.now();
       
-      const { data, error } = await resend.emails.send({
-        from: fromEmail,
+      const mailOptions = {
+        from: `"Sistema de Gestión de Facturas" <${fromEmail}>`,
         to: toEmail,
         cc: userEmail,
         subject: subject,
         html: htmlContent
-      });
+      };
+      
+      const info = await transporter.sendMail(mailOptions);
       
       const duration = Date.now() - startTime;
       
-      if (error) {
-        console.error('❌ Error de Resend:', error);
-        return { success: false, error: error.message || 'Error desconocido de Resend' };
-      }
-      
       console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-      console.log('✅ Message ID:', data?.id);
-      return { success: true, messageId: data?.id };
+      console.log('✅ Message ID:', info.messageId);
+      return { success: true, messageId: info.messageId };
     } catch (sendError) {
       console.error('❌ Error al enviar correo:', sendError);
       console.error('❌ Mensaje del error:', sendError.message);
-      console.error('❌ Stack trace:', sendError.stack);
+      console.error('❌ Code:', sendError.code);
       return { success: false, error: sendError.message };
     }
 
