@@ -11,7 +11,10 @@ const transporter = nodemailer.createTransport({
   },
   tls: {
     ciphers: 'SSLv3'
-  }
+  },
+  connectionTimeout: 10000, // 10 segundos para conectar
+  greetingTimeout: 10000, // 10 segundos para saludo
+  socketTimeout: 10000 // 10 segundos para operaciones socket
 });
 
 // Verificar configuración de Outlook SMTP
@@ -307,7 +310,15 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
         html: htmlContent
       };
       
-      const info = await transporter.sendMail(mailOptions);
+      console.log('📧 MailOptions configurado, enviando...');
+      
+      // Agregar timeout manual de 20 segundos
+      const sendPromise = transporter.sendMail(mailOptions);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 20 segundos')), 20000)
+      );
+      
+      const info = await Promise.race([sendPromise, timeoutPromise]);
       
       const duration = Date.now() - startTime;
       
@@ -318,6 +329,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.error('❌ Error al enviar correo:', sendError);
       console.error('❌ Mensaje del error:', sendError.message);
       console.error('❌ Code:', sendError.code);
+      console.error('❌ Stack:', sendError.stack);
       return { success: false, error: sendError.message };
     }
 
