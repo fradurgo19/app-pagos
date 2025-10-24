@@ -1,21 +1,24 @@
 import nodemailer from 'nodemailer';
 
-// Configuración SMTP de Outlook/Office365
-const transporter = nodemailer.createTransport({
-  host: 'smtp-mail.outlook.com',
-  port: 587,
-  secure: false, // true para 465, false para otros puertos
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  },
-  tls: {
-    ciphers: 'SSLv3'
-  },
-  connectionTimeout: 10000, // 10 segundos para conectar
-  greetingTimeout: 10000, // 10 segundos para saludo
-  socketTimeout: 10000 // 10 segundos para operaciones socket
-});
+// Función para crear un transporte SMTP nuevo por cada envío
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: 'smtp-mail.outlook.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    },
+    tls: {
+      ciphers: 'SSLv3',
+      rejectUnauthorized: false
+    },
+    connectionTimeout: 5000, // 5 segundos para conectar
+    greetingTimeout: 5000, // 5 segundos para saludo
+    socketTimeout: 5000 // 5 segundos para operaciones socket
+  });
+};
 
 // Verificar configuración de Outlook SMTP
 export const verifyEmailConfig = async () => {
@@ -27,6 +30,7 @@ export const verifyEmailConfig = async () => {
     }
     
     // Verificar conexión SMTP
+    const transporter = createTransporter();
     await transporter.verify();
     
     console.log('✅ Servidor de correo Outlook configurado correctamente');
@@ -312,13 +316,19 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       
       console.log('📧 MailOptions configurado, enviando...');
       
-      // Agregar timeout manual de 20 segundos
+      // Crear transporte nuevo para este envío
+      const transporter = createTransporter();
+      
+      // Agregar timeout manual de 8 segundos
       const sendPromise = transporter.sendMail(mailOptions);
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 20 segundos')), 20000)
+        setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 8 segundos')), 8000)
       );
       
       const info = await Promise.race([sendPromise, timeoutPromise]);
+      
+      // Cerrar transporte después del envío
+      transporter.close();
       
       const duration = Date.now() - startTime;
       
