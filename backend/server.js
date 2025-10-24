@@ -473,15 +473,24 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
     
     // Enviar notificación por correo (no bloqueante)
     // Obtener datos del usuario que creó la factura usando Supabase
+    console.log('📧 Intentando obtener datos del usuario para correo...');
+    console.log('📧 User ID:', req.user.id);
+    
     const { data: userData, error: userError } = await supabaseDb
       .from('profiles')
       .select('email, full_name')
       .eq('id', req.user.id)
       .single();
 
+    console.log('📧 Resultado de consulta Supabase:');
+    console.log('📧 Data:', userData);
+    console.log('📧 Error:', userError);
+
     if (!userError && userData) {
       const userEmail = userData.email;
       const userName = userData.full_name;
+
+      console.log(`✅ Datos del usuario obtenidos: ${userEmail} - ${userName}`);
 
       // Preparar URL del archivo adjunto si existe (Supabase)
       let attachmentPath = normalizedBill.documentUrl || null;
@@ -490,7 +499,7 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
       sendNewBillNotification(transformedBill, userEmail, userName, attachmentPath)
         .then(result => {
           if (result.success) {
-            console.log(`📧 Correo enviado a fherrera@partequipos.com y ${userEmail}`);
+            console.log(`✅ Correo enviado a fherrera@partequipos.com y ${userEmail}`);
           } else {
             console.error('❌ Error al enviar correo:', result.error);
           }
@@ -498,6 +507,9 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
         .catch(error => {
           console.error('❌ Error al enviar correo:', error);
         });
+    } else {
+      console.error('❌ Error al obtener datos del usuario para correo:', userError);
+      console.error('❌ Detalles del error:', JSON.stringify(userError, null, 2));
     }
     
     res.status(201).json(transformedBill);

@@ -5,7 +5,7 @@ dotenv.config();
 
 // Cliente para Base de Datos (tablas)
 const supabaseDbUrl = process.env.VITE_SUPABASE_URL;
-const supabaseDbKey = process.env.SUPABASE_SERVICE_KEY;
+const supabaseDbKey = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 export const supabaseDb = createClient(supabaseDbUrl, supabaseDbKey);
 
 // Cliente para Storage (archivos)
