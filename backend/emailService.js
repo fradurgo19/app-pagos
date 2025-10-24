@@ -89,8 +89,8 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
   try {
     console.log('📧 Iniciando envío de correo...');
     console.log('📧 Usuario:', userName, userEmail);
-    console.log('📧 EMAIL_USER configurado:', process.env.EMAIL_USER ? 'Sí' : 'No');
-    console.log('📧 EMAIL_PASSWORD configurado:', process.env.EMAIL_PASSWORD ? 'Sí' : 'No');
+    console.log('📧 RESEND_API_KEY configurado:', process.env.RESEND_API_KEY ? 'Sí' : 'No');
+    console.log('📧 EMAIL_FROM configurado:', process.env.EMAIL_FROM ? 'Sí' : 'No');
     
     // Preparar datos del correo
     const mailOptions = {
