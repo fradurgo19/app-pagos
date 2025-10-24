@@ -1,15 +1,7 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// Configuración SMTP de Resend usando nodemailer (funciona sin instalar paquetes adicionales)
-const transporter = nodemailer.createTransport({
-  host: 'smtp.resend.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: 'resend',
-    pass: process.env.RESEND_API_KEY || process.env.EMAIL_PASSWORD
-  }
-});
+// Inicializar cliente de Resend
+const resend = new Resend(process.env.RESEND_API_KEY || process.env.EMAIL_PASSWORD);
 
 // Verificar configuración de Resend
 export const verifyEmailConfig = async () => {
@@ -87,15 +79,10 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     console.log('📧 EMAIL_FROM configurado:', process.env.EMAIL_FROM ? 'Sí' : 'No');
     
     // Preparar datos del correo
-    const mailOptions = {
-      from: {
-        name: 'Sistema de Gestión de Facturas',
-        address: process.env.EMAIL_FROM || 'onboarding@resend.dev'
-      },
-      to: process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com',
-      cc: userEmail, // Copia al usuario que creó la factura
-      subject: `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`,
-      html: `
+    const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+    const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
+    const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
+    const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -282,31 +269,43 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
           </div>
         </body>
         </html>
-      `
-    };
+      `;
 
     // Nota: Los archivos en Supabase se envían como enlaces en el correo
     // Esto evita problemas de timeout en Vercel serverless con archivos grandes
 
-    // Enviar correo usando SMTP de Resend
+    // Enviar correo usando API de Resend
     console.log('📧 Intentando enviar correo...');
-    console.log('📧 Destinatario:', mailOptions.to);
-    console.log('📧 CC:', mailOptions.cc);
-    console.log('📧 Asunto:', mailOptions.subject);
+    console.log('📧 Destinatario:', toEmail);
+    console.log('📧 CC:', userEmail);
+    console.log('📧 Asunto:', subject);
     
     try {
-      console.log('📧 Llamando a transporter.sendMail()...');
+      console.log('📧 Llamando a resend.emails.send()...');
       const startTime = Date.now();
       
-      const info = await transporter.sendMail(mailOptions);
+      const { data, error } = await resend.emails.send({
+        from: fromEmail,
+        to: toEmail,
+        cc: userEmail,
+        subject: subject,
+        html: htmlContent
+      });
       
       const duration = Date.now() - startTime;
+      
+      if (error) {
+        console.error('❌ Error de Resend:', error);
+        return { success: false, error: error.message || 'Error desconocido de Resend' };
+      }
+      
       console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-      console.log('✅ Message ID:', info.messageId);
-      return { success: true, messageId: info.messageId };
+      console.log('✅ Message ID:', data?.id);
+      return { success: true, messageId: data?.id };
     } catch (sendError) {
       console.error('❌ Error al enviar correo:', sendError);
       console.error('❌ Mensaje del error:', sendError.message);
+      console.error('❌ Stack trace:', sendError.stack);
       return { success: false, error: sendError.message };
     }
 
