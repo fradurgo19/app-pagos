@@ -14,12 +14,12 @@ const transporter = nodemailer.createTransport({
     ciphers: 'TLSv1.2',
     rejectUnauthorized: true
   },
-  // Optimizado para Vercel serverless
-  connectionTimeout: 10000,  // 10 segundos (más rápido)
-  greetingTimeout: 5000,     // 5 segundos
-  socketTimeout: 10000,      // 10 segundos
-  maxConnections: 1,         // Una conexión a la vez
-  maxMessages: 3              // Máximo 3 mensajes por conexión
+  // Configuración para Vercel serverless
+  connectionTimeout: 20000,  // 20 segundos
+  greetingTimeout: 10000,     // 10 segundos
+  socketTimeout: 20000,       // 20 segundos
+  disableFileAccess: true,
+  disableUrlAccess: true
 });
 
 // Verificar configuración del transportador
@@ -314,12 +314,12 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log('📧 Llamando a transporter.sendMail()...');
       const startTime = Date.now();
       
-      // Timeout de 30 segundos para Outlook
+      // Timeout de 25 segundos para Outlook SMTP
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => {
-          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 30 segundos');
-          reject(new Error('Timeout after 30 seconds'));
-        }, 30000)
+          console.error('⏱️ TIMEOUT: El envío de correo tomó más de 25 segundos');
+          reject(new Error('Timeout after 25 seconds'));
+        }, 25000)
       );
       
       const info = await Promise.race([
