@@ -1,11 +1,12 @@
 import nodemailer from 'nodemailer';
 
-// Configuración del transportador de correo - OUTLOOK/Office365
-// Usar puerto 465 con SSL para evitar problemas de timeout en Vercel
+// Configuración del transportador de correo - GMAIL (GRATIS Y CONFIABLE)
+// Gmail tiene mejor compatibilidad con Vercel serverless que Outlook
 const transporter = nodemailer.createTransport({
-  host: 'smtp-mail.outlook.com',
-  port: 465,
-  secure: true,  // SSL
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  requireTLS: true,
   auth: {
     user: process.env.EMAIL_USER || 'analista.mantenimiento@partequipos.com',
     pass: process.env.EMAIL_PASSWORD || 'Fradurgo19.$'
@@ -13,13 +14,7 @@ const transporter = nodemailer.createTransport({
   tls: {
     ciphers: 'TLSv1.2',
     rejectUnauthorized: true
-  },
-  // Configuración para Vercel serverless
-  connectionTimeout: 15000,  // 15 segundos
-  greetingTimeout: 5000,     // 5 segundos
-  socketTimeout: 15000,      // 15 segundos
-  disableFileAccess: true,
-  disableUrlAccess: true
+  }
 });
 
 // Verificar configuración del transportador
@@ -35,11 +30,11 @@ export const verifyEmailConfig = async () => {
     console.log('');
     console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
     console.log('');
-    console.log('💡 Soluciones para Outlook:');
-    console.log('   1. Verifica que EMAIL_USER y EMAIL_PASSWORD sean correctos en backend/.env');
-    console.log('   2. Asegúrate de usar la contraseña correcta de Outlook');
-    console.log('   3. Si usas autenticación en 2 pasos, genera una contraseña de aplicación:');
-    console.log('      → https://account.microsoft.com/security');
+    console.log('💡 Soluciones para Gmail:');
+    console.log('   1. Verifica que EMAIL_USER y EMAIL_PASSWORD sean correctos en Vercel');
+    console.log('   2. Si tienes autenticación en 2 pasos activada, genera una contraseña de aplicación:');
+    console.log('      → https://myaccount.google.com/apppasswords');
+    console.log('   3. O usa tu contraseña de Gmail si no tienes 2FA activado');
     console.log('');
     return false;
   }
