@@ -1,19 +1,14 @@
 import nodemailer from 'nodemailer';
 
-// Configuración del transportador de correo - GMAIL (GRATIS Y CONFIABLE)
-// Gmail tiene mejor compatibilidad con Vercel serverless que Outlook
+// Configuración del transportador de correo - RESEND (GRATIS Y SIN RESTRICCIONES)
+// Resend funciona perfectamente en Vercel sin necesidad de autenticación en 2 pasos
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
+  host: 'smtp.resend.com',
   port: 587,
   secure: false,
-  requireTLS: true,
   auth: {
-    user: process.env.EMAIL_USER || 'analista.mantenimiento@partequipos.com',
-    pass: process.env.EMAIL_PASSWORD || 'Fradurgo19.$'
-  },
-  tls: {
-    ciphers: 'TLSv1.2',
-    rejectUnauthorized: true
+    user: 'resend',
+    pass: process.env.RESEND_API_KEY || process.env.EMAIL_PASSWORD
   }
 });
 
@@ -30,11 +25,11 @@ export const verifyEmailConfig = async () => {
     console.log('');
     console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
     console.log('');
-    console.log('💡 Soluciones para Gmail:');
-    console.log('   1. Verifica que EMAIL_USER y EMAIL_PASSWORD sean correctos en Vercel');
-    console.log('   2. Si tienes autenticación en 2 pasos activada, genera una contraseña de aplicación:');
-    console.log('      → https://myaccount.google.com/apppasswords');
-    console.log('   3. O usa tu contraseña de Gmail si no tienes 2FA activado');
+    console.log('💡 Configuración de Resend:');
+    console.log('   1. Crea cuenta gratis en: https://resend.com');
+    console.log('   2. Genera API Key en tu dashboard');
+    console.log('   3. Configura en Vercel: RESEND_API_KEY=tu-api-key');
+    console.log('   4. Verifica dominio: storageentrenapartequipos@gmail.com');
     console.log('');
     return false;
   }
@@ -101,7 +96,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     const mailOptions = {
       from: {
         name: 'Sistema de Gestión de Facturas',
-        address: process.env.EMAIL_USER || 'analista.mantenimiento@partequipos.com'
+        address: process.env.EMAIL_FROM || 'storageentrenapartequipos@gmail.com'
       },
       to: 'fherrera@partequipos.com',
       cc: userEmail, // Copia al usuario que creó la factura
