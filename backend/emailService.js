@@ -12,7 +12,10 @@ const transporter = nodemailer.createTransport({
   tls: {
     ciphers: 'SSLv3',
     rejectUnauthorized: false
-  }
+  },
+  connectionTimeout: 10000, // 10 segundos timeout
+  greetingTimeout: 10000,
+  socketTimeout: 10000
 });
 
 // Verificar configuración del transportador
@@ -299,8 +302,17 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     console.log('📧 Asunto:', mailOptions.subject);
     
     try {
-      const info = await transporter.sendMail(mailOptions);
-      console.log('✅ Correo enviado exitosamente:', info.messageId);
+      console.log('📧 Llamando a transporter.sendMail()...');
+      const startTime = Date.now();
+      const info = await Promise.race([
+        transporter.sendMail(mailOptions),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
+        )
+      ]);
+      const duration = Date.now() - startTime;
+      console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
+      console.log('✅ Message ID:', info.messageId);
       console.log('✅ Respuesta del servidor:', info.response);
       return { success: true, messageId: info.messageId };
     } catch (sendError) {
