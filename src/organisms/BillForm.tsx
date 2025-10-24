@@ -398,7 +398,7 @@ export const BillForm: React.FC = () => {
             label="Centro de Costos"
             value={formData.costCenter}
             onChange={(e) => handleInputChange('costCenter', e.target.value)}
-            placeholder="Departamento de TI"
+            placeholder="Digita Centro de Costo"
           />
 
           <Select
