@@ -90,6 +90,11 @@ const translateStatus = (status) => {
 // Enviar notificación de nueva factura
 export const sendNewBillNotification = async (billData, userEmail, userName, attachmentPath = null) => {
   try {
+    console.log('📧 Iniciando envío de correo...');
+    console.log('📧 Usuario:', userName, userEmail);
+    console.log('📧 EMAIL_USER configurado:', process.env.EMAIL_USER ? 'Sí' : 'No');
+    console.log('📧 EMAIL_PASSWORD configurado:', process.env.EMAIL_PASSWORD ? 'Sí' : 'No');
+    
     // Preparar datos del correo
     const mailOptions = {
       from: {
@@ -288,12 +293,16 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     }
 
     // Enviar correo
+    console.log('📧 Intentando enviar correo...');
     const info = await transporter.sendMail(mailOptions);
     console.log('✅ Correo enviado exitosamente:', info.messageId);
+    console.log('✅ Respuesta del servidor:', info.response);
     return { success: true, messageId: info.messageId };
 
   } catch (error) {
     console.error('❌ Error al enviar correo:', error);
+    console.error('❌ Detalles del error:', error.message);
+    console.error('❌ Stack trace:', error.stack);
     return { success: false, error: error.message };
   }
 };
