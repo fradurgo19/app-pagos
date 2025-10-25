@@ -80,7 +80,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     console.log('📧 SENDGRID_API_KEY configurado:', process.env.SENDGRID_API_KEY ? 'Sí' : 'No');
     
     // Preparar datos del correo
-    const fromEmail = process.env.EMAIL_FROM || 'noreply@partequipos.com';
+    const fromEmail = 'noreply@sendgrid.net'; // Email verificado por defecto de SendGrid
     const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
     const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
