@@ -295,7 +295,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log('📧 MailOptions configurado, enviando...');
       
       // Crear transporte Mailgun
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         host: 'smtp.mailgun.org',
         port: 587,
         secure: false,
