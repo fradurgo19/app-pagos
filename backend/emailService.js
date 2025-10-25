@@ -303,21 +303,27 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
           user: process.env.MAILGUN_SMTP_USER,
           pass: process.env.MAILGUN_SMTP_PASS
         },
-        // Configuración optimizada para serverless
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000
+        // Configuración optimizada para serverless (timeouts más cortos)
+        connectionTimeout: 5000,
+        greetingTimeout: 5000,
+        socketTimeout: 5000
       });
       
       try {
         console.log('📧 Conectando a Mailgun SMTP...');
         
-        // Timeout manual de 15 segundos
+        // Verificar conexión primero
+        console.log('📧 Verificando conexión SMTP...');
+        await transporter.verify();
+        console.log('✅ Conexión SMTP verificada');
+        
+        // Timeout manual de 8 segundos (más agresivo para Vercel)
         const sendPromise = transporter.sendMail(mailOptions);
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 15 segundos')), 15000)
+          setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 8 segundos')), 8000)
         );
         
+        console.log('📧 Enviando correo...');
         const info = await Promise.race([sendPromise, timeoutPromise]);
         
         const duration = Date.now() - startTime;
@@ -331,8 +337,13 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
         return { success: true, messageId: info.messageId };
       } catch (mailError) {
         console.error('❌ Error durante envío:', mailError.message);
+        console.error('❌ Tipo de error:', mailError.code);
         // Cerrar transporte si hay error
-        transporter.close();
+        try {
+          transporter.close();
+        } catch (closeError) {
+          console.log('⚠️ Error al cerrar transporte:', closeError.message);
+        }
         throw mailError;
       }
     } catch (sendError) {
