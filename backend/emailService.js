@@ -1,20 +1,30 @@
-import nodemailer from 'nodemailer';
+import formData from 'form-data';
+import Mailgun from 'mailgun.js';
+
+// Configurar cliente Mailgun
+const mailgun = new Mailgun(formData);
+const mg = mailgun.client({
+  username: 'api',
+  key: process.env.MAILGUN_API_KEY,
+  url: 'https://api.mailgun.net'
+});
 
 // Verificar configuración de Mailgun
 export const verifyEmailConfig = async () => {
   try {
-    const user = process.env.MAILGUN_SMTP_USER;
-    const pass = process.env.MAILGUN_SMTP_PASS;
+    const apiKey = process.env.MAILGUN_API_KEY;
+    const domain = process.env.MAILGUN_DOMAIN;
     
-    if (!user || !pass) {
-      console.log('⚠️  MAILGUN_SMTP_USER/MAILGUN_SMTP_PASS no configurados');
+    if (!apiKey || !domain) {
+      console.log('⚠️  MAILGUN_API_KEY/MAILGUN_DOMAIN no configurados');
       console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
       return false;
     }
     
-    console.log('✅ Servidor de correo Mailgun configurado correctamente');
+    console.log('✅ API Mailgun configurada correctamente');
     console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'analista.mantenimiento@partequipos.com');
     console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com');
+    console.log('🌐 Dominio Mailgun:', domain);
     return true;
   } catch (error) {
     console.error('❌ Error en configuración de correo:', error.message);
@@ -74,13 +84,19 @@ const translateStatus = (status) => {
 // Enviar notificación de nueva factura
 export const sendNewBillNotification = async (billData, userEmail, userName, attachmentPath = null) => {
   try {
-    console.log('📧 Iniciando envío de correo...');
+    console.log('📧 Iniciando envío de correo con API Mailgun...');
     console.log('📧 Usuario:', userName, userEmail);
-    console.log('📧 MAILGUN_SMTP_USER configurado:', process.env.MAILGUN_SMTP_USER ? 'Sí' : 'No');
-    console.log('📧 MAILGUN_SMTP_PASS configurado:', process.env.MAILGUN_SMTP_PASS ? 'Sí' : 'No');
+    console.log('📧 MAILGUN_API_KEY configurado:', process.env.MAILGUN_API_KEY ? 'Sí' : 'No');
+    console.log('📧 MAILGUN_DOMAIN configurado:', process.env.MAILGUN_DOMAIN ? 'Sí' : 'No');
+    
+    // Verificar configuración
+    if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) {
+      console.log('⚠️  Variables de entorno de Mailgun no configuradas');
+      return { success: false, error: 'Configuración de correo incompleta' };
+    }
     
     // Preparar datos del correo
-    const fromEmail = process.env.EMAIL_FROM || 'analista.mantenimiento@partequipos.com';
+    const fromEmail = process.env.EMAIL_FROM || 'noreply@partequipos.com';
     const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
     const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
@@ -238,6 +254,9 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
                 <p style="margin: 5px 0 0 0; font-size: 14px; color: #6b7280;">
                   <strong>Fecha de registro:</strong> ${formatDate(new Date())}
                 </p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #9ca3af;">
+                  <em>Nota: Este correo se envía solo a analista.mantenimiento@partequipos.com debido a restricciones del dominio sandbox de Mailgun.</em>
+                </p>
               </div>
 
               <p style="margin-top: 30px; color: #6b7280;">
@@ -275,83 +294,44 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     // Nota: Los archivos en Supabase se envían como enlaces en el correo
     // Esto evita problemas de timeout en Vercel serverless con archivos grandes
 
-    // Enviar correo usando Mailgun SMTP
-    console.log('📧 Intentando enviar correo...');
+    // Enviar correo usando API REST de Mailgun
+    console.log('📧 Intentando enviar correo con API Mailgun...');
     console.log('📧 Destinatario:', toEmail);
-    console.log('📧 CC:', userEmail);
+    console.log('📧 Usuario que creó la factura:', userEmail, '(NO se envía CC por restricciones sandbox)');
     console.log('📧 Asunto:', subject);
     
     try {
-      console.log('📧 Llamando a transporter.sendMail()...');
+      console.log('📧 Preparando datos para API Mailgun...');
       const startTime = Date.now();
       
-      const mailOptions = {
+      // Preparar datos para la API de Mailgun
+      // NOTA: Solo enviamos a analista.mantenimiento@partequipos.com porque es el único email autorizado en el dominio sandbox
+      const messageData = {
         from: `"Sistema de Gestión de Facturas" <${fromEmail}>`,
-        to: toEmail,
-        cc: userEmail,
+        to: [toEmail], // Solo a analista.mantenimiento@partequipos.com
         subject: subject,
         html: htmlContent
       };
       
-      console.log('📧 MailOptions configurado, enviando...');
+      console.log('📧 Enviando correo con API Mailgun...');
       
-      // Crear transporte Mailgun
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.mailgun.org',
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.MAILGUN_SMTP_USER,
-          pass: process.env.MAILGUN_SMTP_PASS
-        },
-        // Configuración optimizada para serverless (timeouts más cortos)
-        connectionTimeout: 5000,
-        greetingTimeout: 5000,
-        socketTimeout: 5000
-      });
+      // Enviar usando API REST de Mailgun (más rápido que SMTP)
+      const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, messageData);
       
-      try {
-        console.log('📧 Conectando a Mailgun SMTP...');
-        
-        // Verificar conexión primero
-        console.log('📧 Verificando conexión SMTP...');
-        await transporter.verify();
-        console.log('✅ Conexión SMTP verificada');
-        
-        // Timeout manual de 8 segundos (más agresivo para Vercel)
-        const sendPromise = transporter.sendMail(mailOptions);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 8 segundos')), 8000)
-        );
-        
-        console.log('📧 Enviando correo...');
-        const info = await Promise.race([sendPromise, timeoutPromise]);
-        
-        const duration = Date.now() - startTime;
-        
-        console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-        console.log('✅ Message ID:', info.messageId);
-        
-        // Cerrar transporte después del envío exitoso
-        transporter.close();
-        
-        return { success: true, messageId: info.messageId };
-      } catch (mailError) {
-        console.error('❌ Error durante envío:', mailError.message);
-        console.error('❌ Tipo de error:', mailError.code);
-        // Cerrar transporte si hay error
-        try {
-          transporter.close();
-        } catch (closeError) {
-          console.log('⚠️ Error al cerrar transporte:', closeError.message);
-        }
-        throw mailError;
-      }
-    } catch (sendError) {
-      console.error('❌ Error al enviar correo:', sendError);
-      console.error('❌ Mensaje del error:', sendError.message);
-      console.error('❌ Code:', sendError.code);
-      return { success: false, error: sendError.message };
+      const duration = Date.now() - startTime;
+      
+      console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
+      console.log('✅ Message ID:', result.id);
+      console.log('✅ Status:', result.message);
+      console.log('✅ Enviado solo a analista.mantenimiento@partequipos.com (dominio sandbox)');
+      
+      return { success: true, messageId: result.id };
+      
+    } catch (apiError) {
+      console.error('❌ Error al enviar correo con API Mailgun:', apiError);
+      console.error('❌ Mensaje del error:', apiError.message);
+      console.error('❌ Status:', apiError.status);
+      return { success: false, error: apiError.message };
     }
 
   } catch (error) {
