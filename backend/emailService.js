@@ -3,7 +3,6 @@ import sgMail from '@sendgrid/mail';
 // Configurar SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-
 // Verificar configuración de SendGrid
 export const verifyEmailConfig = async () => {
   try {
@@ -14,7 +13,7 @@ export const verifyEmailConfig = async () => {
     }
     
     console.log('✅ Servidor de correo SendGrid configurado correctamente');
-    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'noreply@partequipos.com');
+    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'noreply@sendgrid.net');
     console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com');
     return true;
   } catch (error) {
@@ -294,13 +293,38 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       };
       
       console.log('📧 Enviando con SendGrid...');
-      const response = await sgMail.send(msg);
       
-      const duration = Date.now() - startTime;
+      // Intentar con diferentes emails de remitente
+      const fromEmails = [
+        'noreply@sendgrid.net',
+        'test@sendgrid.net', 
+        'hello@sendgrid.net'
+      ];
       
-      console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-      console.log('✅ Status Code:', response[0]?.statusCode);
-      return { success: true, messageId: response[0]?.headers['x-message-id'] };
+      let lastError = null;
+      
+      for (const fromAddr of fromEmails) {
+        try {
+          console.log(`📧 Intentando con: ${fromAddr}`);
+          const msgWithFrom = { ...msg, from: fromAddr };
+          const response = await sgMail.send(msgWithFrom);
+          
+          const duration = Date.now() - startTime;
+          
+          console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
+          console.log('✅ Status Code:', response[0]?.statusCode);
+          console.log('✅ From:', fromAddr);
+          return { success: true, messageId: response[0]?.headers['x-message-id'] };
+        } catch (emailError) {
+          console.log(`❌ Falló con ${fromAddr}:`, emailError.message);
+          lastError = emailError;
+          continue;
+        }
+      }
+      
+      // Si todos fallan, lanzar el último error
+      throw lastError;
+      
     } catch (sendError) {
       console.error('❌ Error al enviar correo:', sendError);
       console.error('❌ Mensaje del error:', sendError.message);
