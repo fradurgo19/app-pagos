@@ -174,6 +174,24 @@ export const BillForm: React.FC = () => {
   const currentProviderOptions = providerOptions[formData.serviceType as ServiceType] || [];
 
   const handleInputChange = (field: keyof UtilityBillFormData, value: string) => {
+    // Validar que los campos de monto solo contengan números
+    if ((field === 'value' || field === 'totalAmount' || field === 'consumption') && value !== '') {
+      // Permitir solo números, punto decimal y comas
+      const numericRegex = /^[0-9.,]+$/;
+      if (!numericRegex.test(value)) {
+        return; // No actualizar si no es un número válido
+      }
+      
+      // Convertir comas a puntos para consistencia
+      value = value.replace(',', '.');
+      
+      // Validar que solo haya un punto decimal
+      const dotCount = (value.match(/\./g) || []).length;
+      if (dotCount > 1) {
+        return; // No actualizar si hay más de un punto decimal
+      }
+    }
+
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
       
@@ -189,7 +207,7 @@ export const BillForm: React.FC = () => {
       // Generar descripción automáticamente
       const serviceType = field === 'serviceType' ? value : updated.serviceType;
       const provider = field === 'provider' ? value : updated.provider;
-      const invoiceNumber = field === 'invoiceNumber' ? value : updated.invoiceNumber;
+      const contractNumber = field === 'contractNumber' ? value : updated.contractNumber;
       
       // Traducir tipo de servicio
       const serviceTypeLabel = serviceTypeOptions.find(s => s.value === serviceType)?.label || '';
@@ -198,7 +216,7 @@ export const BillForm: React.FC = () => {
       const parts = [];
       if (serviceTypeLabel) parts.push(serviceTypeLabel);
       if (provider) parts.push(provider);
-      if (invoiceNumber) parts.push(invoiceNumber);
+      if (contractNumber) parts.push(contractNumber);
       
       updated.description = parts.join(' - ');
       
