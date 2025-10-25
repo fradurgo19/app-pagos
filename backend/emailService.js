@@ -98,7 +98,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     // Preparar datos del correo
     const fromEmail = process.env.EMAIL_FROM || 'noreply@partequipos.com';
     const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
-    const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
+    const subject = `Nueva Factura Registrada - ${billData.contractNumber || 'Sin contrato'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -176,6 +176,12 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
             <div class="content">
               <p>Hola,</p>
               <p>Se ha registrado una nueva factura en el sistema por <strong>${userName}</strong>.</p>
+              
+              <div style="margin: 20px 0; padding: 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 8px; text-align: center;">
+                <h2 style="margin: 0; color: white; font-size: 24px; font-weight: bold;">
+                  📋 CONTRATO: ${billData.contractNumber || 'Sin contrato'}
+                </h2>
+              </div>
               
               <div class="highlight">
                 <h3 style="margin-top: 0; color: #1e40af;">📋 Detalles de la Factura</h3>
