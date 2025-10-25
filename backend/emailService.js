@@ -13,7 +13,7 @@ export const verifyEmailConfig = async () => {
     }
     
     console.log('✅ Servidor de correo Mailgun configurado correctamente');
-    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'noreply@mg.partequipos.com');
+    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'analista.mantenimiento@partequipos.com');
     console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com');
     return true;
   } catch (error) {
@@ -79,7 +79,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     console.log('📧 MAILGUN_SMTP_USER configurado:', process.env.MAILGUN_SMTP_USER ? 'Sí' : 'No');
     
     // Preparar datos del correo
-    const fromEmail = process.env.EMAIL_FROM || 'noreply@mg.partequipos.com';
+    const fromEmail = process.env.EMAIL_FROM || 'analista.mantenimiento@partequipos.com';
     const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
     const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
