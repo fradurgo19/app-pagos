@@ -1,58 +1,21 @@
-import nodemailer from 'nodemailer';
+import sgMail from '@sendgrid/mail';
 
-// Crear transporte SMTP NUEVO por cada envío (crítico para serverless)
-const createTransporter = () => {
-  const host = process.env.SMTP_HOST || 'smtp-mail.outlook.com';
-  const port = parseInt(process.env.SMTP_PORT || '587');
-  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
-  
-  console.log('📧 Creando transporte SMTP nuevo:', { host, port, user: user?.substring(0, 3) + '***' });
-  
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: false, // Outlook usa STARTTLS en puerto 587
-    auth: {
-      user,
-      pass
-    },
-    // Configuración optimizada para serverless
-    pool: false, // No mantener pool de conexiones
-    maxConnections: 1,
-    maxMessages: 1,
-    rateDelta: 1000,
-    rateLimit: 1,
-    // Timeouts más cortos para Vercel serverless
-    connectionTimeout: 10000, // 10 segundos (máximo de Vercel gratis)
-    greetingTimeout: 10000,   // 10 segundos
-    socketTimeout: 10000      // 10 segundos
-  });
-};
+// Configurar SendGrid
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Verificar configuración de Outlook SMTP
+
+// Verificar configuración de SendGrid
 export const verifyEmailConfig = async () => {
   try {
-    const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-    const pass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
-    
-    if (!user || !pass) {
-      console.log('⚠️  SMTP_USER/SMTP_PASS o EMAIL_USER/EMAIL_PASSWORD no configurados');
+    if (!process.env.SENDGRID_API_KEY) {
+      console.log('⚠️  SENDGRID_API_KEY no configurada');
       console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
       return false;
     }
     
-    // Crear transporte nuevo y verificar conexión SMTP
-    const trans = createTransporter();
-    await trans.verify();
-    
-    console.log('✅ Servidor de correo Outlook configurado correctamente');
-    console.log('📧 Correos se enviarán desde:', user);
+    console.log('✅ Servidor de correo SendGrid configurado correctamente');
+    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'noreply@partequipos.com');
     console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com');
-    
-    // Cerrar conexión después de verificar
-    trans.close();
-    
     return true;
   } catch (error) {
     console.error('❌ Error en configuración de correo:', error.message);
@@ -114,15 +77,10 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
   try {
     console.log('📧 Iniciando envío de correo...');
     console.log('📧 Usuario:', userName, userEmail);
-    
-    const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-    const pass = process.env.SMTP_PASS || process.env.EMAIL_PASSWORD;
-    
-    console.log('📧 SMTP_USER configurado:', user ? 'Sí' : 'No');
-    console.log('📧 SMTP_PASS configurado:', pass ? 'Sí' : 'No');
+    console.log('📧 SENDGRID_API_KEY configurado:', process.env.SENDGRID_API_KEY ? 'Sí' : 'No');
     
     // Preparar datos del correo
-    const fromEmail = user;
+    const fromEmail = process.env.EMAIL_FROM || 'noreply@partequipos.com';
     const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
     const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
@@ -317,60 +275,38 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     // Nota: Los archivos en Supabase se envían como enlaces en el correo
     // Esto evita problemas de timeout en Vercel serverless con archivos grandes
 
-    // Enviar correo usando SMTP de Outlook
+    // Enviar correo usando SendGrid
     console.log('📧 Intentando enviar correo...');
     console.log('📧 Destinatario:', toEmail);
     console.log('📧 CC:', userEmail);
     console.log('📧 Asunto:', subject);
     
     try {
-      console.log('📧 Llamando a transporter.sendMail()...');
+      console.log('📧 Llamando a sgMail.send()...');
       const startTime = Date.now();
       
-      const mailOptions = {
-        from: `"Sistema de Gestión de Facturas" <${fromEmail}>`,
+      const msg = {
         to: toEmail,
         cc: userEmail,
+        from: fromEmail,
         subject: subject,
         html: htmlContent
       };
       
-      console.log('📧 MailOptions configurado, enviando...');
+      console.log('📧 Enviando con SendGrid...');
+      const response = await sgMail.send(msg);
       
-      // Crear transporte NUEVO para este envío (crítico en serverless)
-      const trans = createTransporter();
+      const duration = Date.now() - startTime;
       
-      try {
-        console.log('📧 Conectando a SMTP...');
-        
-        // Timeout manual de 15 segundos
-        const sendPromise = trans.sendMail(mailOptions);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 15 segundos')), 15000)
-        );
-        
-        const info = await Promise.race([sendPromise, timeoutPromise]);
-        
-        const duration = Date.now() - startTime;
-        
-        console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-        console.log('✅ Message ID:', info.messageId);
-        
-        // Cerrar transporte después del envío exitoso
-        trans.close();
-        
-        return { success: true, messageId: info.messageId };
-      } catch (mailError) {
-        console.error('❌ Error durante envío:', mailError.message);
-        // Cerrar transporte si hay error
-        trans.close();
-        throw mailError;
-      }
+      console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
+      console.log('✅ Status Code:', response[0]?.statusCode);
+      return { success: true, messageId: response[0]?.headers['x-message-id'] };
     } catch (sendError) {
       console.error('❌ Error al enviar correo:', sendError);
       console.error('❌ Mensaje del error:', sendError.message);
-      console.error('❌ Code:', sendError.code);
-      console.error('❌ Stack:', sendError.stack);
+      if (sendError.response) {
+        console.error('❌ Response body:', sendError.response.body);
+      }
       return { success: false, error: sendError.message };
     }
 
