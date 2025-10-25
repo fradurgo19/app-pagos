@@ -1,19 +1,19 @@
-import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 
-// Configurar SendGrid
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-// Verificar configuración de SendGrid
+// Verificar configuración de Mailgun
 export const verifyEmailConfig = async () => {
   try {
-    if (!process.env.SENDGRID_API_KEY) {
-      console.log('⚠️  SENDGRID_API_KEY no configurada');
+    const user = process.env.MAILGUN_SMTP_USER;
+    const pass = process.env.MAILGUN_SMTP_PASS;
+    
+    if (!user || !pass) {
+      console.log('⚠️  MAILGUN_SMTP_USER/MAILGUN_SMTP_PASS no configurados');
       console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
       return false;
     }
     
-    console.log('✅ Servidor de correo SendGrid configurado correctamente');
-    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'noreply@sendgrid.net');
+    console.log('✅ Servidor de correo Mailgun configurado correctamente');
+    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'noreply@mg.partequipos.com');
     console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com');
     return true;
   } catch (error) {
@@ -76,10 +76,10 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
   try {
     console.log('📧 Iniciando envío de correo...');
     console.log('📧 Usuario:', userName, userEmail);
-    console.log('📧 SENDGRID_API_KEY configurado:', process.env.SENDGRID_API_KEY ? 'Sí' : 'No');
+    console.log('📧 MAILGUN_SMTP_USER configurado:', process.env.MAILGUN_SMTP_USER ? 'Sí' : 'No');
     
     // Preparar datos del correo
-    const fromEmail = 'noreply@sendgrid.net'; // Email verificado por defecto de SendGrid
+    const fromEmail = process.env.EMAIL_FROM || 'noreply@mg.partequipos.com';
     const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
     const subject = `Nueva Factura Registrada - ${billData.invoiceNumber || 'Sin número'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
@@ -274,63 +274,71 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     // Nota: Los archivos en Supabase se envían como enlaces en el correo
     // Esto evita problemas de timeout en Vercel serverless con archivos grandes
 
-    // Enviar correo usando SendGrid
+    // Enviar correo usando Mailgun SMTP
     console.log('📧 Intentando enviar correo...');
     console.log('📧 Destinatario:', toEmail);
     console.log('📧 CC:', userEmail);
     console.log('📧 Asunto:', subject);
     
     try {
-      console.log('📧 Llamando a sgMail.send()...');
+      console.log('📧 Llamando a transporter.sendMail()...');
       const startTime = Date.now();
       
-      const msg = {
+      const mailOptions = {
+        from: `"Sistema de Gestión de Facturas" <${fromEmail}>`,
         to: toEmail,
         cc: userEmail,
-        from: fromEmail,
         subject: subject,
         html: htmlContent
       };
       
-      console.log('📧 Enviando con SendGrid...');
+      console.log('📧 MailOptions configurado, enviando...');
       
-      // Intentar con diferentes emails de remitente
-      const fromEmails = [
-        'noreply@sendgrid.net',
-        'test@sendgrid.net', 
-        'hello@sendgrid.net'
-      ];
+      // Crear transporte Mailgun
+      const transporter = nodemailer.createTransporter({
+        host: 'smtp.mailgun.org',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.MAILGUN_SMTP_USER,
+          pass: process.env.MAILGUN_SMTP_PASS
+        },
+        // Configuración optimizada para serverless
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000
+      });
       
-      let lastError = null;
-      
-      for (const fromAddr of fromEmails) {
-        try {
-          console.log(`📧 Intentando con: ${fromAddr}`);
-          const msgWithFrom = { ...msg, from: fromAddr };
-          const response = await sgMail.send(msgWithFrom);
-          
-          const duration = Date.now() - startTime;
-          
-          console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-          console.log('✅ Status Code:', response[0]?.statusCode);
-          console.log('✅ From:', fromAddr);
-          return { success: true, messageId: response[0]?.headers['x-message-id'] };
-        } catch (emailError) {
-          console.log(`❌ Falló con ${fromAddr}:`, emailError.message);
-          lastError = emailError;
-          continue;
-        }
+      try {
+        console.log('📧 Conectando a Mailgun SMTP...');
+        
+        // Timeout manual de 15 segundos
+        const sendPromise = transporter.sendMail(mailOptions);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 15 segundos')), 15000)
+        );
+        
+        const info = await Promise.race([sendPromise, timeoutPromise]);
+        
+        const duration = Date.now() - startTime;
+        
+        console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
+        console.log('✅ Message ID:', info.messageId);
+        
+        // Cerrar transporte después del envío exitoso
+        transporter.close();
+        
+        return { success: true, messageId: info.messageId };
+      } catch (mailError) {
+        console.error('❌ Error durante envío:', mailError.message);
+        // Cerrar transporte si hay error
+        transporter.close();
+        throw mailError;
       }
-      
-      // Si todos fallan, lanzar el último error
-      throw lastError;
-      
     } catch (sendError) {
       console.error('❌ Error al enviar correo:', sendError);
       console.error('❌ Mensaje del error:', sendError.message);
-      if (sendError.response) {
-        console.error('❌ Response body:', sendError.response.body);
-      }
+      console.error('❌ Code:', sendError.code);
       return { success: false, error: sendError.message };
     }
 
