@@ -77,6 +77,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     console.log('📧 Iniciando envío de correo...');
     console.log('📧 Usuario:', userName, userEmail);
     console.log('📧 MAILGUN_SMTP_USER configurado:', process.env.MAILGUN_SMTP_USER ? 'Sí' : 'No');
+    console.log('📧 MAILGUN_SMTP_PASS configurado:', process.env.MAILGUN_SMTP_PASS ? 'Sí' : 'No');
     
     // Preparar datos del correo
     const fromEmail = process.env.EMAIL_FROM || 'analista.mantenimiento@partequipos.com';
