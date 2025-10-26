@@ -299,12 +299,17 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log('📧 Preparando datos para Gmail SMTP...');
       const startTime = Date.now();
       
-      // Crear transporte Gmail SMTP
+      // Crear transporte Gmail SMTP con configuración explícita
       const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false, // TLS para puerto 587
         auth: {
           user: process.env.GMAIL_USER,
           pass: process.env.GMAIL_APP_PASSWORD
+        },
+        tls: {
+          rejectUnauthorized: false
         }
       });
       
