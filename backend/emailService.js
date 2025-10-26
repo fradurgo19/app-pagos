@@ -1,30 +1,20 @@
-import formData from 'form-data';
-import Mailgun from 'mailgun.js';
+import nodemailer from 'nodemailer';
 
-// Configurar cliente Mailgun
-const mailgun = new Mailgun(formData);
-const mg = mailgun.client({
-  username: 'api',
-  key: process.env.MAILGUN_API_KEY,
-  url: 'https://api.mailgun.net'
-});
-
-// Verificar configuración de Mailgun
+// Verificar configuración de Gmail SMTP
 export const verifyEmailConfig = async () => {
   try {
-    const apiKey = process.env.MAILGUN_API_KEY;
-    const domain = process.env.MAILGUN_DOMAIN;
+    const user = process.env.GMAIL_USER;
+    const pass = process.env.GMAIL_APP_PASSWORD;
     
-    if (!apiKey || !domain) {
-      console.log('⚠️  MAILGUN_API_KEY/MAILGUN_DOMAIN no configurados');
+    if (!user || !pass) {
+      console.log('⚠️  GMAIL_USER/GMAIL_APP_PASSWORD no configurados');
       console.log('⚠️  El sistema funcionará, pero NO enviará correos.');
       return false;
     }
     
-    console.log('✅ API Mailgun configurada correctamente');
-    console.log('📧 Correos se enviarán desde:', process.env.EMAIL_FROM || 'analista.mantenimiento@partequipos.com');
-    console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com');
-    console.log('🌐 Dominio Mailgun:', domain);
+    console.log('✅ Gmail SMTP configurado correctamente');
+    console.log('📧 Correos se enviarán desde:', process.env.GMAIL_USER);
+    console.log('📬 Correos llegarán a:', process.env.EMAIL_TO || 'fherrera@partequipos.com');
     return true;
   } catch (error) {
     console.error('❌ Error en configuración de correo:', error.message);
@@ -84,20 +74,19 @@ const translateStatus = (status) => {
 // Enviar notificación de nueva factura
 export const sendNewBillNotification = async (billData, userEmail, userName, attachmentPath = null) => {
   try {
-    console.log('📧 Iniciando envío de correo con API Mailgun...');
+    console.log('📧 Iniciando envío de correo con Gmail SMTP...');
     console.log('📧 Usuario:', userName, userEmail);
-    console.log('📧 MAILGUN_API_KEY configurado:', process.env.MAILGUN_API_KEY ? 'Sí' : 'No');
-    console.log('📧 MAILGUN_DOMAIN configurado:', process.env.MAILGUN_DOMAIN ? 'Sí' : 'No');
+    console.log('📧 GMAIL_USER configurado:', process.env.GMAIL_USER ? 'Sí' : 'No');
     
     // Verificar configuración
-    if (!process.env.MAILGUN_API_KEY || !process.env.MAILGUN_DOMAIN) {
-      console.log('⚠️  Variables de entorno de Mailgun no configuradas');
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+      console.log('⚠️  Variables de entorno de Gmail no configuradas');
       return { success: false, error: 'Configuración de correo incompleta' };
     }
     
     // Preparar datos del correo
-    const fromEmail = process.env.EMAIL_FROM || 'noreply@partequipos.com';
-    const toEmail = process.env.EMAIL_TO || 'analista.mantenimiento@partequipos.com';
+    const fromEmail = process.env.GMAIL_USER; // Desde Gmail
+    const toEmail = process.env.EMAIL_TO || 'fherrera@partequipos.com';
     const subject = `Nueva Factura Registrada - ${billData.contractNumber || 'Sin contrato'} - ${translateServiceType(billData.serviceType)}`;
     const htmlContent = `
         <!DOCTYPE html>
@@ -300,44 +289,53 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     // Nota: Los archivos en Supabase se envían como enlaces en el correo
     // Esto evita problemas de timeout en Vercel serverless con archivos grandes
 
-    // Enviar correo usando API REST de Mailgun
-    console.log('📧 Intentando enviar correo con API Mailgun...');
-    console.log('📧 Destinatario:', toEmail);
-    console.log('📧 Usuario que creó la factura:', userEmail, '(NO se envía CC por restricciones sandbox)');
+    // Enviar correo usando Gmail SMTP
+    console.log('📧 Intentando enviar correo con Gmail SMTP...');
+    console.log('📧 Destinatario principal:', toEmail);
+    console.log('📧 CC al creador de la factura:', userEmail);
     console.log('📧 Asunto:', subject);
     
     try {
-      console.log('📧 Preparando datos para API Mailgun...');
+      console.log('📧 Preparando datos para Gmail SMTP...');
       const startTime = Date.now();
       
-      // Preparar datos para la API de Mailgun
-      // NOTA: Solo enviamos a analista.mantenimiento@partequipos.com porque es el único email autorizado en el dominio sandbox
-      const messageData = {
+      // Crear transporte Gmail SMTP
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD
+        }
+      });
+      
+      // Configurar opciones del correo
+      const mailOptions = {
         from: `"Sistema de Gestión de Facturas" <${fromEmail}>`,
-        to: [toEmail], // Solo a analista.mantenimiento@partequipos.com
+        to: toEmail, // Correo principal a fherrera@partequipos.com
+        cc: userEmail, // Copia al creador de la factura
         subject: subject,
         html: htmlContent
       };
       
-      console.log('📧 Enviando correo con API Mailgun...');
+      console.log('📧 Enviando correo con Gmail SMTP...');
       
-      // Enviar usando API REST de Mailgun (más rápido que SMTP)
-      const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, messageData);
+      // Enviar correo
+      const info = await transporter.sendMail(mailOptions);
       
       const duration = Date.now() - startTime;
       
       console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
-      console.log('✅ Message ID:', result.id);
-      console.log('✅ Status:', result.message);
-      console.log('✅ Enviado solo a analista.mantenimiento@partequipos.com (dominio sandbox)');
+      console.log('✅ Message ID:', info.messageId);
+      console.log('✅ Enviado a:', toEmail);
+      console.log('✅ Copia enviada a:', userEmail);
       
-      return { success: true, messageId: result.id };
+      return { success: true, messageId: info.messageId };
       
-    } catch (apiError) {
-      console.error('❌ Error al enviar correo con API Mailgun:', apiError);
-      console.error('❌ Mensaje del error:', apiError.message);
-      console.error('❌ Status:', apiError.status);
-      return { success: false, error: apiError.message };
+    } catch (smtpError) {
+      console.error('❌ Error al enviar correo con Gmail SMTP:', smtpError);
+      console.error('❌ Mensaje del error:', smtpError.message);
+      console.error('❌ Code:', smtpError.code);
+      return { success: false, error: smtpError.message };
     }
 
   } catch (error) {
