@@ -310,7 +310,11 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
         },
         tls: {
           rejectUnauthorized: false
-        }
+        },
+        // Timeouts más cortos para Vercel serverless
+        connectionTimeout: 5000,
+        greetingTimeout: 5000,
+        socketTimeout: 10000
       });
       
       // Configurar opciones del correo
@@ -323,9 +327,17 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       };
       
       console.log('📧 Enviando correo con Gmail SMTP...');
+      console.log('📧 From:', fromEmail);
+      console.log('📧 To:', toEmail);
+      console.log('📧 CC:', userEmail);
       
-      // Enviar correo
-      const info = await transporter.sendMail(mailOptions);
+      // Enviar correo con timeout manual
+      const sendPromise = transporter.sendMail(mailOptions);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 10 segundos')), 10000)
+      );
+      
+      const info = await Promise.race([sendPromise, timeoutPromise]);
       
       const duration = Date.now() - startTime;
       
