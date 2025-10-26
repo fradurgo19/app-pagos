@@ -331,10 +331,10 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log('📧 To:', toEmail);
       console.log('📧 CC:', userEmail);
       
-      // Enviar correo con timeout manual
+      // Enviar correo con timeout manual (25 segundos para evitar errores falsos)
       const sendPromise = transporter.sendMail(mailOptions);
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 10 segundos')), 10000)
+        setTimeout(() => reject(new Error('Timeout: SMTP tardó más de 25 segundos')), 25000)
       );
       
       const info = await Promise.race([sendPromise, timeoutPromise]);
@@ -345,6 +345,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log('✅ Message ID:', info.messageId);
       console.log('✅ Enviado a:', toEmail);
       console.log('✅ Copia enviada a:', userEmail);
+      console.log('✅ Estado: completado');
       
       return { success: true, messageId: info.messageId };
       
