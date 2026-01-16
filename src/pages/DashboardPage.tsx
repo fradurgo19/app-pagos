@@ -30,7 +30,7 @@ export const DashboardPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cf1b22]"></div>
       </div>
     );
   }
@@ -38,11 +38,11 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header Premium */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 rounded-2xl shadow-2xl p-8 border border-blue-700/50">
+      <div className="bg-gradient-to-r from-[#cf1b22] via-[#a11217] to-[#50504f] rounded-2xl shadow-2xl p-8 border border-[#cf1b22]/40">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Panel de Control</h1>
-            <p className="text-blue-200 text-lg">
+            <p className="text-white/80 text-lg">
               Análisis y resumen de facturas empresariales
               {selectedPeriods.length > 0 && (
                 <span className="ml-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-white/20 text-white backdrop-blur-sm">
@@ -67,25 +67,25 @@ export const DashboardPage: React.FC = () => {
           value={formatCurrency(kpis.monthlyTotal)}
           change={kpis.monthlyChange}
           icon={<DollarSign className="w-6 h-6 text-white" />}
-          iconColor="bg-blue-500"
+          iconColor="bg-[#cf1b22]"
         />
         <KPICard
           title="Facturas Pendientes"
           value={kpis.pendingCount.toString()}
           icon={<Clock className="w-6 h-6 text-white" />}
-          iconColor="bg-yellow-500"
+          iconColor="bg-[#50504f]"
         />
         <KPICard
           title="Facturas Vencidas"
           value={kpis.overdueCount.toString()}
           icon={<AlertCircle className="w-6 h-6 text-white" />}
-          iconColor="bg-red-500"
+          iconColor="bg-[#a11217]"
         />
         <KPICard
           title="Facturas Aprobadas"
           value={(periodBills.filter(b => b.status === 'approved' || b.status === 'paid').length).toString()}
           icon={<CheckCircle className="w-6 h-6 text-white" />}
-          iconColor="bg-green-500"
+          iconColor="bg-[#d94c52]"
         />
       </div>
 

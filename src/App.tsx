@@ -17,7 +17,7 @@ const UsersPage = lazy(() => import('./pages/UsersPage').then(module => ({ defau
 // Componente de carga mientras se cargan las páginas
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cf1b22]"></div>
   </div>
 );
 

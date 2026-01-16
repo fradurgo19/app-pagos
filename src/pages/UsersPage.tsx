@@ -4,9 +4,7 @@ import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Select } from '../atoms/Select';
-import { Badge } from '../atoms/Badge';
 import { UserProfile, UserRole } from '../types';
-import { authService } from '../services/authService';
 import { API_URL } from '../config';
 
 interface NewUserForm {
@@ -149,7 +147,7 @@ export const UsersPage: React.FC = () => {
       
       if (isEditing) {
         // Actualizar usuario
-        const updateData: any = {
+        const updateData: Partial<NewUserForm> = {
           fullName: formData.fullName,
           location: formData.location,
           department: formData.department,
@@ -205,6 +203,7 @@ export const UsersPage: React.FC = () => {
         }
       }
     } catch (error) {
+      console.error('Error al guardar usuario:', error);
       setFormError(isEditing ? 'Error al actualizar usuario' : 'Error al crear usuario');
     } finally {
       setFormLoading(false);
@@ -233,37 +232,42 @@ export const UsersPage: React.FC = () => {
         alert(error.error || 'Error al eliminar usuario');
       }
     } catch (error) {
+      console.error('Error al eliminar usuario:', error);
       alert('Error al eliminar usuario');
     }
   };
 
   const getRoleBadge = (role: UserRole | undefined | null) => {
+    const baseClasses = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium gap-1';
+    const neutralBadge = `${baseClasses} bg-[#f1f1f1] text-[#50504f]`;
+    const highlightBadge = `${baseClasses} bg-[#fdebec] text-[#cf1b22]`;
+
     if (!role) {
       return (
-        <Badge variant="secondary">
-          <UserIcon className="w-3 h-3 mr-1 inline" />
+        <span className={neutralBadge}>
+          <UserIcon className="w-3 h-3 inline" />
           Sin rol
-        </Badge>
+        </span>
       );
     }
     
     return role === 'area_coordinator' ? (
-      <Badge variant="info">
-        <Shield className="w-3 h-3 mr-1 inline" />
+      <span className={highlightBadge}>
+        <Shield className="w-3 h-3 inline" />
         Coordinador
-      </Badge>
+      </span>
     ) : (
-      <Badge variant="secondary">
-        <UserIcon className="w-3 h-3 mr-1 inline" />
+      <span className={neutralBadge}>
+        <UserIcon className="w-3 h-3 inline" />
         Usuario
-      </Badge>
+      </span>
     );
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cf1b22]"></div>
       </div>
     );
   }
@@ -271,15 +275,15 @@ export const UsersPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header Elegante */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 rounded-2xl shadow-2xl p-8 border border-blue-700/50">
+      <div className="bg-gradient-to-r from-[#cf1b22] via-[#a11217] to-[#50504f] rounded-2xl shadow-2xl p-8 border border-[#cf1b22]/40">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Gestión de Usuarios</h1>
-            <p className="text-blue-200 text-lg">Administración y control de usuarios del sistema</p>
+            <p className="text-white/80 text-lg">Administración y control de usuarios del sistema</p>
           </div>
           <button 
             onClick={() => showForm ? handleCancelEdit() : setShowForm(true)}
-            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl transition-all shadow-lg font-medium"
+            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#cf1b22] to-[#a11217] hover:from-[#b2181d] hover:to-[#7f0c12] text-white rounded-xl transition-all shadow-lg font-medium"
           >
             <UserPlus className="w-5 h-5" />
             <span>{showForm ? 'Cancelar' : 'Nuevo Usuario'}</span>
@@ -290,8 +294,8 @@ export const UsersPage: React.FC = () => {
       {/* Estadística */}
       <Card>
         <div className="flex items-center space-x-3">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <UsersIcon className="w-6 h-6 text-blue-600" />
+          <div className="p-3 bg-[#fdebec] rounded-lg">
+            <UsersIcon className="w-6 h-6 text-[#cf1b22]" />
           </div>
           <div>
             <p className="text-sm text-gray-600">Total de Usuarios</p>
@@ -445,7 +449,7 @@ export const UsersPage: React.FC = () => {
                       <div className="flex items-center space-x-3">
                         <button
                           onClick={() => handleEdit(user)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-[#cf1b22] hover:text-[#7f0c12]"
                           aria-label="Editar usuario"
                         >
                           <Edit2 className="w-4 h-4" />

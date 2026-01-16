@@ -64,7 +64,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white flex items-center justify-between"
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cf1b22] bg-white flex items-center justify-between"
       >
         <div className="flex items-center space-x-2">
           <Calendar className="w-4 h-4 text-gray-500" />
@@ -80,7 +80,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
             <button
               type="button"
               onClick={selectAll}
-              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+              className="text-xs text-[#cf1b22] hover:text-[#7f0c12] font-medium"
             >
               Seleccionar todos
             </button>
@@ -104,7 +104,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                   type="checkbox"
                   checked={selectedPeriods.includes(period)}
                   onChange={() => togglePeriod(period)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-[#cf1b22] focus:ring-[#cf1b22]"
                 />
                 <span className="ml-2 text-sm text-gray-900">{period}</span>
               </label>
@@ -119,7 +119,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-[#cf1b22] hover:text-[#7f0c12] font-medium"
                 >
                   Aplicar
                 </button>
@@ -135,13 +135,13 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
           {selectedPeriods.map(period => (
             <span
               key={period}
-              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
+              className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-[#fdebec] text-[#cf1b22]"
             >
               {period}
               <button
                 type="button"
                 onClick={() => togglePeriod(period)}
-                className="ml-1 hover:text-blue-900"
+                className="ml-1 hover:text-[#7f0c12]"
               >
                 <X className="w-3 h-3" />
               </button>

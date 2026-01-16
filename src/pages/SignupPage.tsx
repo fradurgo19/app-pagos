@@ -38,7 +38,7 @@ export const SignupPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#fdebec] to-[#f5f5f5] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo de la compañía */}
         <div className="flex justify-center mb-6">
@@ -50,7 +50,7 @@ export const SignupPage: React.FC = () => {
         </div>
         
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#cf1b22] rounded-full mb-4">
             <UserPlus className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Crear Cuenta</h1>
@@ -113,7 +113,7 @@ export const SignupPage: React.FC = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               ¿Ya tienes una cuenta?{' '}
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+              <Link to="/login" className="text-[#cf1b22] hover:text-[#7f0c12] font-medium">
                 Iniciar sesión
               </Link>
             </p>

@@ -126,7 +126,7 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
   const SortIcon: React.FC<{ column: keyof UtilityBill }> = ({ column }) => (
     <ArrowUpDown
       className={`w-4 h-4 ml-1 inline ${
-        sortState.column === column ? 'text-blue-600' : 'text-gray-400'
+        sortState.column === column ? 'text-[#cf1b22]' : 'text-gray-400'
       }`}
     />
   );
@@ -142,8 +142,8 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
       
       <div className="space-y-4">
         {selectedBills.size > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
-          <span className="text-sm text-blue-900">
+        <div className="bg-[#fdebec] border border-[#f3b8bc] rounded-lg p-4 flex items-center justify-between">
+          <span className="text-sm text-[#8b1016]">
             {selectedBills.size} factura{selectedBills.size > 1 ? 's' : ''} seleccionada{selectedBills.size > 1 ? 's' : ''}
           </span>
           <Button variant="danger" size="sm" onClick={handleBulkDelete}>
@@ -162,7 +162,7 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                   type="checkbox"
                   checked={selectedBills.size === bills.length && bills.length > 0}
                   onChange={handleSelectAll}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-[#cf1b22] focus:ring-[#cf1b22]"
                   aria-label="Seleccionar todas las facturas"
                 />
               </th>
@@ -225,7 +225,7 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                       type="checkbox"
                       checked={selectedBills.has(bill.id)}
                       onChange={() => handleSelectBill(bill.id)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-[#cf1b22] focus:ring-[#cf1b22]"
                       aria-label={`Seleccionar factura ${bill.invoiceNumber || bill.id}`}
                     />
                   </td>
@@ -256,15 +256,15 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                         value={bill.status === 'approved' || bill.status === 'paid' ? 'approved' : 'pending'}
                         onChange={(e) => handleStatusChange(bill.id, e.target.value)}
                         disabled={loading === bill.id}
-                        className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#cf1b22] disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
-                          backgroundColor: bill.status === 'approved' || bill.status === 'paid' ? '#dcfce7' : '#fef3c7',
-                          color: bill.status === 'approved' || bill.status === 'paid' ? '#166534' : '#92400e',
+                          backgroundColor: bill.status === 'approved' || bill.status === 'paid' ? '#f7d7da' : '#fdebec',
+                          color: bill.status === 'approved' || bill.status === 'paid' ? '#7f0c12' : '#b5181d',
                           fontWeight: '500'
                         }}
                       >
-                        <option value="pending" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>🟡 Pendiente</option>
-                        <option value="approved" style={{ backgroundColor: '#dcfce7', color: '#166534' }}>🟢 Aprobada</option>
+                        <option value="pending" style={{ backgroundColor: '#fdebec', color: '#b5181d' }}>⏳ Pendiente</option>
+                        <option value="approved" style={{ backgroundColor: '#f7d7da', color: '#7f0c12' }}>✅ Aprobada</option>
                       </select>
                     ) : (
                       <Badge status={bill.status} />
@@ -274,7 +274,7 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => setViewingBill(bill)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-[#cf1b22] hover:text-[#7f0c12]"
                         aria-label="Ver detalles de factura"
                       >
                         <Eye className="w-4 h-4" />
@@ -307,13 +307,13 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
             )}
             {/* Fila de totales */}
             {bills.length > 0 && (
-              <tr className="bg-blue-50 border-t-2 border-blue-200 font-bold">
+              <tr className="bg-[#fdebec] border-t-2 border-[#f3b8bc] font-bold">
                 <td className="px-4 py-4" colSpan={5}>
                   <div className="text-right text-gray-900 font-bold">
                     TOTAL:
                   </div>
                 </td>
-                <td className="px-4 py-4 whitespace-nowrap text-lg font-bold text-blue-600">
+                <td className="px-4 py-4 whitespace-nowrap text-lg font-bold text-[#cf1b22]">
                   {formatCurrency(totalAmount)}
                 </td>
                 <td className="px-4 py-4" colSpan={4}></td>

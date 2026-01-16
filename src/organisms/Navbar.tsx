@@ -29,7 +29,7 @@ export const Navbar: React.FC = () => {
   );
 
   return (
-    <nav className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 border-b border-blue-800/50 sticky top-0 z-50 shadow-lg backdrop-blur-sm">
+    <nav className="bg-gradient-to-r from-[#cf1b22] via-[#a11217] to-[#50504f] border-b border-[#cf1b22]/60 sticky top-0 z-50 shadow-lg backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-18">
           <div className="flex items-center space-x-8">
@@ -43,7 +43,7 @@ export const Navbar: React.FC = () => {
               </div>
               <div className="hidden lg:block">
                 <span className="text-xl font-bold text-white tracking-tight">Gestión de Facturas</span>
-                <p className="text-xs text-blue-300">Control Empresarial</p>
+                <p className="text-xs text-white/80">Control Empresarial</p>
               </div>
             </Link>
 
@@ -58,7 +58,7 @@ export const Navbar: React.FC = () => {
                     className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       isActive
                         ? 'bg-white/20 text-white shadow-lg backdrop-blur-sm'
-                        : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                        : 'text-white/80 hover:bg-white/10 hover:text-white'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -72,11 +72,11 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center space-x-4">
             <div className="text-right bg-white/10 px-4 py-2 rounded-xl backdrop-blur-sm">
               <p className="text-sm font-semibold text-white">{profile?.fullName}</p>
-              <p className="text-xs text-blue-200 capitalize">{profile?.role?.replace('_', ' ')}</p>
+              <p className="text-xs text-white/80 capitalize">{profile?.role?.replace('_', ' ')}</p>
             </div>
             <button
               onClick={handleSignOut}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-600/90 hover:bg-red-700 text-white rounded-xl transition-all shadow-lg hover:shadow-xl"
+              className="flex items-center space-x-2 px-4 py-2 bg-[#cf1b22] hover:bg-[#a11217] text-white rounded-xl transition-all shadow-lg hover:shadow-xl"
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Salir</span>

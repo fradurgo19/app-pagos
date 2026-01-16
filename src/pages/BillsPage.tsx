@@ -57,7 +57,7 @@ export const BillsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cf1b22]"></div>
       </div>
     );
   }
@@ -65,11 +65,11 @@ export const BillsPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header Elegante */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 rounded-2xl shadow-2xl p-8 border border-blue-700/50">
+      <div className="bg-gradient-to-r from-[#cf1b22] via-[#a11217] to-[#50504f] rounded-2xl shadow-2xl p-8 border border-[#cf1b22]/40">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Gestión de Facturas</h1>
-            <p className="text-blue-200 text-lg">Administración completa de facturas de servicios</p>
+            <p className="text-white/80 text-lg">Administración completa de facturas de servicios</p>
           </div>
           <div className="flex items-center space-x-3">
             <button 
@@ -80,7 +80,7 @@ export const BillsPage: React.FC = () => {
               <span>Exportar</span>
             </button>
             <Link to="/new-bill">
-              <button className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl transition-all shadow-lg font-medium">
+              <button className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-[#cf1b22] to-[#a11217] hover:from-[#b2181d] hover:to-[#7f0c12] text-white rounded-xl transition-all shadow-lg font-medium">
                 <PlusCircle className="w-5 h-5" />
                 <span>Nueva Factura</span>
               </button>

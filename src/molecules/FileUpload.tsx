@@ -115,8 +115,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             displayError 
               ? 'border-red-300 bg-red-50' 
               : isDragging 
-                ? 'border-blue-500 bg-blue-100' 
-                : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                ? 'border-[#cf1b22] bg-[#fdebec]' 
+                : 'border-gray-300 hover:border-[#cf1b22] hover:bg-[#f8dfe1]'
           }`}
         >
           <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
@@ -130,7 +130,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       ) : (
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div className="flex items-center space-x-3">
-            <File className="w-5 h-5 text-blue-600" />
+            <File className="w-5 h-5 text-[#cf1b22]" />
             <div>
               <p className="text-sm font-medium text-gray-900">{currentFile.name}</p>
               <p className="text-xs text-gray-500">

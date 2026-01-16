@@ -123,14 +123,14 @@ export const ReportsPage: React.FC = () => {
     
     if (normalizedStatus === 'approved') {
       return (
-        <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-green-100 text-green-800 border border-green-200">
-          🟢 Aprobada
+        <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-[#f7d7da] text-[#a11217] border border-[#f3b8bc]">
+          ✅ Aprobada
         </span>
       );
     } else {
       return (
-        <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
-          🟡 Pendiente
+        <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-[#fdebec] text-[#cf1b22] border border-[#f3b8bc]">
+          ⏳ Pendiente
         </span>
       );
     }
@@ -187,7 +187,7 @@ export const ReportsPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cf1b22]"></div>
       </div>
     );
   }
@@ -195,13 +195,13 @@ export const ReportsPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header Elegante */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 rounded-2xl shadow-2xl p-8 border border-blue-700/50">
+      <div className="bg-gradient-to-r from-[#cf1b22] via-[#a11217] to-[#50504f] rounded-2xl shadow-2xl p-8 border border-[#cf1b22]/40">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
               {isAdmin ? 'Todas las Facturas' : 'Mis Facturas'}
             </h1>
-            <p className="text-blue-200 text-lg">
+            <p className="text-white/80 text-lg">
               {isAdmin 
                 ? 'Historial completo de facturas de todos los usuarios' 
                 : 'Historial y seguimiento de tus facturas registradas'
@@ -222,8 +222,8 @@ export const ReportsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <FileText className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-[#fdebec] rounded-lg">
+              <FileText className="w-6 h-6 text-[#cf1b22]" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Facturas</p>
@@ -234,8 +234,8 @@ export const ReportsPage: React.FC = () => {
 
         <Card>
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <DollarSign className="w-6 h-6 text-green-600" />
+            <div className="p-3 bg-[#f1f1f1] rounded-lg">
+              <DollarSign className="w-6 h-6 text-[#50504f]" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Monto Total</p>
@@ -246,8 +246,8 @@ export const ReportsPage: React.FC = () => {
 
         <Card>
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <Package className="w-6 h-6 text-yellow-600" />
+            <div className="p-3 bg-[#f7d7da] rounded-lg">
+              <Package className="w-6 h-6 text-[#a11217]" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Pendientes</p>
@@ -258,8 +258,8 @@ export const ReportsPage: React.FC = () => {
 
         <Card>
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <Calendar className="w-6 h-6 text-purple-600" />
+            <div className="p-3 bg-[#e8e8e8] rounded-lg">
+              <Calendar className="w-6 h-6 text-[#50504f]" />
             </div>
             <div>
               <p className="text-sm text-gray-600">Aprobadas</p>
@@ -280,7 +280,7 @@ export const ReportsPage: React.FC = () => {
               <select
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cf1b22]"
               >
                 <option value="all">Todos los usuarios</option>
                 {users.map(user => (
@@ -299,7 +299,7 @@ export const ReportsPage: React.FC = () => {
             <select
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cf1b22]"
             >
               <option value="all">Todos los periodos</option>
               {periods.map(period => (
@@ -333,13 +333,13 @@ export const ReportsPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                        <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                        <Calendar className="w-5 h-5 mr-2 text-[#cf1b22]" />
                         Periodo: {period}
                       </h2>
                       <p className="text-sm text-gray-600 mt-1">
                         {periodBills.length} factura{periodBills.length !== 1 ? 's' : ''} • Total: {formatCurrency(periodTotal)}
                         {isAdmin && selectedUser === 'all' && (
-                          <span className="ml-2 text-blue-600">
+                          <span className="ml-2 text-[#cf1b22]">
                             • {new Set(periodBills.map(b => b.user_id)).size} usuario{new Set(periodBills.map(b => b.user_id)).size !== 1 ? 's' : ''}
                           </span>
                         )}
@@ -358,7 +358,7 @@ export const ReportsPage: React.FC = () => {
                         {isAdmin && (
                           <div>
                             <p className="text-xs text-gray-500 mb-1">Usuario</p>
-                            <p className="font-medium text-purple-700">{getUserName(bill.user_id)}</p>
+                            <p className="font-medium text-[#cf1b22]">{getUserName(bill.user_id)}</p>
                           </div>
                         )}
 
@@ -367,7 +367,7 @@ export const ReportsPage: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-gray-900">{getServiceTypeLabel(bill.serviceType)}</p>
                             {bill.documentUrl && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800" title="Tiene documento adjunto">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#fdebec] text-[#cf1b22]" title="Tiene documento adjunto">
                                 <File className="w-3 h-3" />
                               </span>
                             )}
@@ -391,7 +391,7 @@ export const ReportsPage: React.FC = () => {
 
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Monto</p>
-                          <p className="font-bold text-blue-600">{formatCurrency(bill.totalAmount)}</p>
+                          <p className="font-bold text-[#cf1b22]">{formatCurrency(bill.totalAmount)}</p>
                         </div>
 
                         <div>
@@ -406,7 +406,7 @@ export const ReportsPage: React.FC = () => {
                             href={bill.documentUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-2 text-green-600 hover:text-green-900 hover:bg-green-50 rounded-lg transition-colors"
+                            className="p-2 text-[#cf1b22] hover:text-[#7f0c12] hover:bg-[#fdebec] rounded-lg transition-colors"
                             title="Descargar documento adjunto"
                           >
                             <File className="w-4 h-4" />

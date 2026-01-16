@@ -28,11 +28,11 @@ export const KPICard: React.FC<KPICardProps> = ({
           {change !== undefined && (
             <div className="mt-2 flex items-center text-sm">
               {isPositive ? (
-                <TrendingUp className="w-4 h-4 text-green-600 mr-1" />
+                <TrendingUp className="w-4 h-4 text-[#cf1b22] mr-1" />
               ) : (
-                <TrendingDown className="w-4 h-4 text-red-600 mr-1" />
+                <TrendingDown className="w-4 h-4 text-[#7f0c12] mr-1" />
               )}
-              <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
+              <span className={isPositive ? 'text-[#cf1b22]' : 'text-[#7f0c12]'}>
                 {Math.abs(change).toFixed(1)}%
               </span>
               <span className="text-gray-600 ml-1">vs last month</span>

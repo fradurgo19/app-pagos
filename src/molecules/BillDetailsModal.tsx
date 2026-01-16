@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Download, Calendar, MapPin, DollarSign, FileText, User } from 'lucide-react';
+import { X, Download, Calendar, DollarSign, FileText, User } from 'lucide-react';
 import { UtilityBill } from '../types';
 import { formatCurrency, formatDate, translateServiceType } from '../utils/formatters';
 import { Badge } from '../atoms/Badge';
@@ -46,9 +46,9 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
           {/* Información Principal */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Tipo de Servicio */}
-            <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="bg-[#fdebec] p-4 rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-[#cf1b22] rounded-lg flex items-center justify-center">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -61,9 +61,9 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
             </div>
 
             {/* Proveedor */}
-            <div className="bg-green-50 p-4 rounded-lg">
+            <div className="bg-[#f1f1f1] p-4 rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-[#50504f] rounded-lg flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -74,9 +74,9 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
             </div>
 
             {/* Monto Total */}
-            <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="bg-[#f7d7da] p-4 rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-[#a11217] rounded-lg flex items-center justify-center">
                   <DollarSign className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -87,9 +87,9 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
             </div>
 
             {/* Fecha de Vencimiento */}
-            <div className="bg-orange-50 p-4 rounded-lg">
+            <div className="bg-[#e8e8e8] p-4 rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-[#cf1b22] rounded-lg flex items-center justify-center">
                   <Calendar className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -159,7 +159,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Documento Adjunto</h3>
               <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <FileText className="w-8 h-8 text-blue-600" />
+                  <FileText className="w-8 h-8 text-[#cf1b22]" />
                   <div>
                     <p className="font-medium text-gray-900">{bill.documentName || 'Documento'}</p>
                     <p className="text-sm text-gray-500">Documento adjunto</p>
@@ -169,7 +169,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
                   href={bill.documentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-700"
+                  className="text-[#cf1b22] hover:text-[#7f0c12]"
                 >
                   <Download className="w-5 h-5" />
                 </a>
@@ -181,7 +181,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
           {bill.status === 'approved' && bill.approvedAt && (
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Información de Aprobación</h3>
-              <div className="bg-green-50 p-4 rounded-lg">
+              <div className="bg-[#fdebec] p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Aprobado el</p>
                 <p className="font-medium text-gray-900">{formatDate(bill.approvedAt)}</p>
               </div>
