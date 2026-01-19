@@ -254,6 +254,31 @@ export const BillForm: React.FC = () => {
     }));
   };
 
+  const formatWithSeparators = (value: string, maxFractionDigits = 2) => {
+    if (!value) return '';
+    const numeric = Number(value);
+    if (isNaN(numeric)) return value;
+    return numeric.toLocaleString('es-CO', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: maxFractionDigits
+    });
+  };
+
+  const handleConsumptionBlur = (
+    index: number,
+    field: keyof UtilityBillFormData['consumptions'][number],
+    fractionDigits = 2
+  ) => {
+    setFormData(prev => {
+      const updatedConsumptions: UtilityBillFormData['consumptions'] = [...prev.consumptions];
+      const current = updatedConsumptions[index];
+      const raw = (current as any)[field] as string;
+      const formatted = formatWithSeparators(raw, fractionDigits);
+      updatedConsumptions[index] = { ...current, [field]: formatted } as UtilityBillFormData['consumptions'][number];
+      return { ...prev, consumptions: updatedConsumptions };
+    });
+  };
+
   const removeConsumption = (index: number) => {
     setFormData(prev => {
       const updated = prev.consumptions.filter((_, i) => i !== index);
@@ -452,6 +477,7 @@ export const BillForm: React.FC = () => {
                     step="0.01"
                     value={consumption.value}
                     onChange={(e) => handleConsumptionChange(idx, 'value', e.target.value)}
+                    onBlur={() => handleConsumptionBlur(idx, 'value', 2)}
                     placeholder="0.00"
                     error={errors[`consumptions.${idx}.value`]}
                   />
@@ -461,6 +487,7 @@ export const BillForm: React.FC = () => {
                     step="0.01"
                     value={consumption.totalAmount}
                     onChange={(e) => handleConsumptionChange(idx, 'totalAmount', e.target.value)}
+                    onBlur={() => handleConsumptionBlur(idx, 'totalAmount', 2)}
                     placeholder="0.00"
                     error={errors[`consumptions.${idx}.totalAmount`]}
                   />
@@ -470,6 +497,7 @@ export const BillForm: React.FC = () => {
                     step="0.01"
                     value={consumption.consumption}
                     onChange={(e) => handleConsumptionChange(idx, 'consumption', e.target.value)}
+                    onBlur={() => handleConsumptionBlur(idx, 'consumption', 3)}
                     placeholder="0.00"
                     error={errors[`consumptions.${idx}.consumption`]}
                   />
