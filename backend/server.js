@@ -71,11 +71,43 @@ const pool = new pg.Pool({
   connectionTimeoutMillis: 10000
 });
 
+// Helper: obtener consumos por lista de facturas
+const fetchConsumptionsByBillIds = async (billIds) => {
+  if (!billIds || billIds.length === 0) return [];
+  const { data, error } = await supabaseDb
+    .from('bill_consumptions')
+    .select('*')
+    .in('bill_id', billIds);
+
+  if (error) {
+    console.error('Error al obtener consumos:', error);
+    throw error;
+  }
+
+  return data || [];
+};
+
 // Secret para JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secret-key-muy-seguro-cambiar-en-produccion';
 
+// Función para convertir consumos a camelCase
+const transformConsumptionToFrontend = (row) => ({
+  id: row.id,
+  billId: row.bill_id,
+  serviceType: row.service_type,
+  provider: row.provider,
+  periodFrom: row.period_from,
+  periodTo: row.period_to,
+  value: parseFloat(row.value) || 0,
+  totalAmount: parseFloat(row.total_amount) || 0,
+  consumption: row.consumption ? parseFloat(row.consumption) : null,
+  unitOfMeasure: row.unit_of_measure,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at
+});
+
 // Función para convertir snake_case a camelCase
-const transformBillToFrontend = (row) => ({
+const transformBillToFrontend = (row, consumptions = []) => ({
   id: row.id,
   user_id: row.user_id,
   serviceType: row.service_type,
@@ -98,7 +130,8 @@ const transformBillToFrontend = (row) => ({
   approvedBy: row.approved_by,
   approvedAt: row.approved_at,
   createdAt: row.created_at,
-  updatedAt: row.updated_at
+  updatedAt: row.updated_at,
+  consumptions
 });
 
 // Middleware de autenticación
@@ -367,9 +400,19 @@ app.get('/api/bills', authenticateToken, async (req, res) => {
     }
 
     const result = { rows: bills || [] };
+
+    const billIds = result.rows.map((b) => b.id);
+    const consumptions = await fetchConsumptionsByBillIds(billIds);
+    const consumptionsByBill = consumptions.reduce((acc, item) => {
+      acc[item.bill_id] = acc[item.bill_id] || [];
+      acc[item.bill_id].push(transformConsumptionToFrontend(item));
+      return acc;
+    }, {});
     
     // Transformar datos a camelCase para el frontend
-    const transformedBills = result.rows.map(transformBillToFrontend);
+    const transformedBills = result.rows.map((row) =>
+      transformBillToFrontend(row, consumptionsByBill[row.id] || [])
+    );
     
     if (transformedBills.length > 0) {
       console.log('📤 Primera factura transformada:', JSON.stringify(transformedBills[0], null, 2));
@@ -396,7 +439,18 @@ app.get('/api/bills/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Factura no encontrada' });
     }
 
-    res.json(transformBillToFrontend(result.rows[0]));
+    const { data: consumptionsData, error: consumptionsError } = await supabaseDb
+      .from('bill_consumptions')
+      .select('*')
+      .eq('bill_id', id);
+
+    if (consumptionsError) {
+      console.error('Error al obtener consumos:', consumptionsError);
+      return res.status(500).json({ error: 'Error al obtener consumos' });
+    }
+
+    const consumptions = (consumptionsData || []).map(transformConsumptionToFrontend);
+    res.json(transformBillToFrontend(result.rows[0], consumptions));
   } catch (error) {
     console.error('Error al obtener factura:', error);
     res.status(500).json({ error: 'Error al obtener factura' });
@@ -410,18 +464,28 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
 
     console.log('📝 Datos recibidos para crear factura:', JSON.stringify(bill, null, 2));
 
+    const consumptions = Array.isArray(bill.consumptions) ? bill.consumptions : [];
+    if (consumptions.length === 0) {
+      return res.status(400).json({ error: 'Debe agregar al menos un consumo para la factura' });
+    }
+
+    const totalValue = consumptions.reduce((sum, c) => sum + (parseFloat(c.value) || 0), 0);
+    const totalAmount = consumptions.reduce((sum, c) => sum + (parseFloat(c.totalAmount) || 0), 0);
+    const totalConsumption = consumptions.reduce((sum, c) => sum + (parseFloat(c.consumption) || 0), 0);
+    const firstConsumption = consumptions[0];
+
     // Normalizar datos (soportar camelCase y snake_case)
     const normalizedBill = {
-      serviceType: bill.serviceType || bill.service_type,
-      provider: bill.provider,
+      serviceType: bill.serviceType || bill.service_type || firstConsumption?.serviceType,
+      provider: bill.provider || firstConsumption?.provider,
       description: bill.description,
-      value: bill.value,
+      value: totalValue,
       period: bill.period,
       invoiceNumber: bill.invoiceNumber || bill.invoice_number,
       contractNumber: bill.contractNumber || bill.contract_number,
-      totalAmount: bill.totalAmount || bill.total_amount,
-      consumption: bill.consumption,
-      unitOfMeasure: bill.unitOfMeasure || bill.unit_of_measure,
+      totalAmount: bill.totalAmount || bill.total_amount || totalAmount,
+      consumption: totalConsumption,
+      unitOfMeasure: bill.unitOfMeasure || bill.unit_of_measure || firstConsumption?.unitOfMeasure,
       costCenter: bill.costCenter || bill.cost_center,
       location: bill.location,
       dueDate: bill.dueDate || bill.due_date,
@@ -464,12 +528,38 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
       return res.status(500).json({ error: 'Error al crear factura' });
     }
 
+    // Insertar consumos asociados
+    const consumptionsPayload = consumptions.map((c) => ({
+      bill_id: createdBill.id,
+      service_type: c.serviceType || c.service_type,
+      provider: c.provider,
+      period_from: c.periodFrom || c.period_from,
+      period_to: c.periodTo || c.period_to,
+      value: parseFloat(c.value),
+      total_amount: parseFloat(c.totalAmount),
+      consumption: c.consumption ? parseFloat(c.consumption) : null,
+      unit_of_measure: c.unitOfMeasure || c.unit_of_measure
+    }));
+
+    const { data: createdConsumptions, error: consumptionsError } = await supabaseDb
+      .from('bill_consumptions')
+      .insert(consumptionsPayload)
+      .select();
+
+    if (consumptionsError) {
+      console.error('Error al crear consumos:', consumptionsError);
+      return res.status(500).json({ error: 'Error al crear consumos' });
+    }
+
     console.log('✅ Factura creada en BD:', JSON.stringify(createdBill, null, 2));
     
     const result = { rows: [createdBill] };
     
     // Transformar a camelCase antes de enviar al frontend
-    const transformedBill = transformBillToFrontend(result.rows[0]);
+    const transformedBill = transformBillToFrontend(
+      result.rows[0],
+      (createdConsumptions || []).map(transformConsumptionToFrontend)
+    );
     console.log('📤 Factura transformada para frontend:', JSON.stringify(transformedBill, null, 2));
     
     // Enviar notificación por correo (no bloqueante)
@@ -531,6 +621,24 @@ app.put('/api/bills/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
+    const incomingConsumptions = Array.isArray(updates.consumptions) ? updates.consumptions : null;
+    if (incomingConsumptions && incomingConsumptions.length === 0) {
+      return res.status(400).json({ error: 'Debe incluir al menos un consumo' });
+    }
+
+    if (incomingConsumptions && incomingConsumptions.length > 0) {
+      const totalValue = incomingConsumptions.reduce((sum, c) => sum + (parseFloat(c.value) || 0), 0);
+      const totalAmount = incomingConsumptions.reduce((sum, c) => sum + (parseFloat(c.totalAmount) || 0), 0);
+      const totalConsumption = incomingConsumptions.reduce((sum, c) => sum + (parseFloat(c.consumption) || 0), 0);
+      const first = incomingConsumptions[0];
+      updates.serviceType = updates.serviceType || updates.service_type || first?.serviceType;
+      updates.provider = updates.provider || first?.provider;
+      updates.value = totalValue;
+      updates.totalAmount = totalAmount;
+      updates.consumption = totalConsumption;
+      updates.unitOfMeasure = updates.unitOfMeasure || first?.unitOfMeasure;
+    }
+
     const result = await pool.query(
       `UPDATE utility_bills SET
         service_type = COALESCE($1, service_type),
@@ -583,7 +691,44 @@ app.put('/api/bills/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Factura no encontrada' });
     }
 
-    res.json(transformBillToFrontend(result.rows[0]));
+    const updatedRow = result.rows[0];
+
+    // Si vienen consumos, reemplazar los existentes
+    if (incomingConsumptions) {
+      const { error: deleteError } = await supabaseDb
+        .from('bill_consumptions')
+        .delete()
+        .eq('bill_id', id);
+      if (deleteError) {
+        console.error('Error al limpiar consumos:', deleteError);
+      }
+
+      const payload = incomingConsumptions.map((c) => ({
+        bill_id: id,
+        service_type: c.serviceType || c.service_type,
+        provider: c.provider,
+        period_from: c.periodFrom || c.period_from,
+        period_to: c.periodTo || c.period_to,
+        value: parseFloat(c.value),
+        total_amount: parseFloat(c.totalAmount),
+        consumption: c.consumption ? parseFloat(c.consumption) : null,
+        unit_of_measure: c.unitOfMeasure || c.unit_of_measure
+      }));
+
+      const { data: newConsumptions, error: insertError } = await supabaseDb
+        .from('bill_consumptions')
+        .insert(payload)
+        .select();
+
+      if (insertError) {
+        console.error('Error al insertar nuevos consumos:', insertError);
+      }
+
+      const consumptions = (newConsumptions || []).map(transformConsumptionToFrontend);
+      return res.json(transformBillToFrontend(updatedRow, consumptions));
+    }
+
+    res.json(transformBillToFrontend(updatedRow));
   } catch (error) {
     console.error('Error al actualizar factura:', error);
     res.status(500).json({ error: 'Error al actualizar factura' });

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send } from 'lucide-react';
+import { Send, Plus, Trash2 } from 'lucide-react';
 import { Input } from '../atoms/Input';
 import { Select } from '../atoms/Select';
 import { Textarea } from '../atoms/Textarea';
@@ -14,22 +14,28 @@ import { billService } from '../services/billService';
 import { API_URL } from '../config';
 
 const initialFormData: UtilityBillFormData = {
-  serviceType: 'electricity',
-  provider: '',
   description: '',
-  value: '',
   period: getCurrentPeriod(),
   invoiceNumber: '',
   contractNumber: '',
-  totalAmount: '',
-  consumption: '',
-  unitOfMeasure: 'kWh',
   costCenter: '',
   location: '',
   dueDate: '',
   attachedDocument: null,
   status: 'draft',
-  notes: ''
+  notes: '',
+  consumptions: [
+    {
+      serviceType: 'electricity',
+      provider: '',
+      periodFrom: '',
+      periodTo: '',
+      value: '',
+      totalAmount: '',
+      consumption: '',
+      unitOfMeasure: 'kWh'
+    }
+  ]
 };
 
 export const BillForm: React.FC = () => {
@@ -171,55 +177,22 @@ export const BillForm: React.FC = () => {
   };
 
   // Obtener proveedores según el tipo de servicio seleccionado
-  const currentProviderOptions = providerOptions[formData.serviceType as ServiceType] || [];
+  const updateDescription = (consumptionsData: UtilityBillFormData['consumptions'], contractNumber: string) => {
+    const first = consumptionsData[0];
+    const serviceTypeLabel = serviceTypeOptions.find(s => s.value === first?.serviceType)?.label || '';
+    const parts = [];
+    if (serviceTypeLabel) parts.push(serviceTypeLabel);
+    if (first?.provider) parts.push(first.provider);
+    if (contractNumber) parts.push(contractNumber);
+    return parts.join(' - ');
+  };
 
   const handleInputChange = (field: keyof UtilityBillFormData, value: string) => {
-    // Validar que los campos de monto solo contengan números
-    if ((field === 'value' || field === 'totalAmount' || field === 'consumption') && value !== '') {
-      // Permitir solo números, punto decimal y comas
-      const numericRegex = /^[0-9.,]+$/;
-      if (!numericRegex.test(value)) {
-        return; // No actualizar si no es un número válido
-      }
-      
-      // Convertir comas a puntos para consistencia
-      value = value.replace(',', '.');
-      
-      // Validar que solo haya un punto decimal
-      const dotCount = (value.match(/\./g) || []).length;
-      if (dotCount > 1) {
-        return; // No actualizar si hay más de un punto decimal
-      }
-    }
-
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
-      
-      // Si se cambia el tipo de servicio, resetear el proveedor
-      if (field === 'serviceType') {
-        const newProviders = providerOptions[value as ServiceType] || [];
-        const currentProviderExists = newProviders.some(p => p.value === prev.provider);
-        if (!currentProviderExists) {
-          updated.provider = '';
-        }
+      if (field === 'contractNumber') {
+        updated.description = updateDescription(prev.consumptions, value);
       }
-      
-      // Generar descripción automáticamente
-      const serviceType = field === 'serviceType' ? value : updated.serviceType;
-      const provider = field === 'provider' ? value : updated.provider;
-      const contractNumber = field === 'contractNumber' ? value : updated.contractNumber;
-      
-      // Traducir tipo de servicio
-      const serviceTypeLabel = serviceTypeOptions.find(s => s.value === serviceType)?.label || '';
-      
-      // Construir descripción
-      const parts = [];
-      if (serviceTypeLabel) parts.push(serviceTypeLabel);
-      if (provider) parts.push(provider);
-      if (contractNumber) parts.push(contractNumber);
-      
-      updated.description = parts.join(' - ');
-      
       return updated;
     });
     
@@ -230,6 +203,67 @@ export const BillForm: React.FC = () => {
         return newErrors;
       });
     }
+  };
+
+  const handleConsumptionChange = (index: number, field: keyof UtilityBillFormData['consumptions'][number], value: string) => {
+    if (['value', 'totalAmount', 'consumption'].includes(field) && value !== '') {
+      const numericRegex = /^[0-9.,]+$/;
+      if (!numericRegex.test(value)) return;
+      value = value.replace(',', '.');
+      const dotCount = (value.match(/\./g) || []).length;
+      if (dotCount > 1) return;
+    }
+
+    setFormData(prev => {
+      const updatedConsumptions: UtilityBillFormData['consumptions'] = [...prev.consumptions];
+      const updatedItem: UtilityBillFormData['consumptions'][number] = {
+        ...updatedConsumptions[index],
+        [field]: value
+      };
+      updatedConsumptions[index] = updatedItem;
+      const newDescription = updateDescription(updatedConsumptions, prev.contractNumber);
+      return { ...prev, consumptions: updatedConsumptions, description: newDescription };
+    });
+
+    const key = `consumptions.${index}.${field}`;
+    if (errors[key]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[key];
+        return newErrors;
+      });
+    }
+  };
+
+  const addConsumption = () => {
+    setFormData(prev => ({
+      ...prev,
+      consumptions: [
+        ...prev.consumptions,
+        {
+          serviceType: 'electricity',
+          provider: '',
+          periodFrom: '',
+          periodTo: '',
+          value: '',
+          totalAmount: '',
+          consumption: '',
+          unitOfMeasure: 'kWh'
+        }
+      ]
+    }));
+  };
+
+  const removeConsumption = (index: number) => {
+    setFormData(prev => {
+      const updated = prev.consumptions.filter((_, i) => i !== index);
+      const consumptions = updated.length ? updated : prev.consumptions;
+      return {
+        ...prev,
+        consumptions,
+        description: updateDescription(consumptions, prev.contractNumber)
+      };
+    });
   };
 
   const handleFileSelect = (file: File | null) => {
@@ -276,30 +310,37 @@ export const BillForm: React.FC = () => {
         }
       }
 
+      const mappedConsumptions = formData.consumptions.map((c) => ({
+        serviceType: c.serviceType as ServiceType,
+        provider: c.provider,
+        periodFrom: c.periodFrom,
+        periodTo: c.periodTo,
+        value: parseCurrencyInput(c.value),
+        totalAmount: parseCurrencyInput(c.totalAmount),
+        consumption: c.consumption ? parseFloat(c.consumption) : undefined,
+        unitOfMeasure: c.unitOfMeasure as UnitType
+      }));
+
       const billData = {
-        serviceType: formData.serviceType as ServiceType,
-        provider: formData.provider,
         description: formData.description,
-        value: parseCurrencyInput(formData.value),
         period: formData.period,
         invoiceNumber: formData.invoiceNumber,
         contractNumber: formData.contractNumber,
-        totalAmount: parseCurrencyInput(formData.totalAmount),
-        consumption: formData.consumption ? parseFloat(formData.consumption) : undefined,
-        unitOfMeasure: formData.unitOfMeasure as UnitType,
         costCenter: formData.costCenter,
         location: formData.location,
         dueDate: formData.dueDate,
         documentUrl: documentUrl || undefined,
         documentName: documentName || undefined,
-        status: 'pending',
-        notes: formData.notes
+        status: 'pending' as const,
+        notes: formData.notes,
+        consumptions: mappedConsumptions
       };
 
       await billService.create(billData);
       navigate('/reports');
-    } catch (err: any) {
-      setSubmitError(err.message || 'Error al guardar la factura');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al guardar la factura';
+      setSubmitError(message);
     } finally {
       setLoading(false);
     }
@@ -316,23 +357,6 @@ export const BillForm: React.FC = () => {
       <Card>
         <h2 className="text-xl font-semibold text-gray-900 mb-6">Información de la Factura</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Select
-            label="Tipo de Servicio *"
-            value={formData.serviceType}
-            options={serviceTypeOptions}
-            onChange={(e) => handleInputChange('serviceType', e.target.value)}
-            error={errors.serviceType}
-          />
-
-          <Select
-            label="Proveedor *"
-            value={formData.provider}
-            options={currentProviderOptions}
-            onChange={(e) => handleInputChange('provider', e.target.value)}
-            placeholder="Seleccione un proveedor"
-            error={errors.provider}
-          />
-
           <Input
             label="Período (AAAA-MM) *"
             type="month"
@@ -368,44 +392,97 @@ export const BillForm: React.FC = () => {
       </Card>
 
       <Card>
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Monto y Consumo</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Monto de la Factura *"
-            type="number"
-            step="0.01"
-            value={formData.value}
-            onChange={(e) => handleInputChange('value', e.target.value)}
-            placeholder="0.00"
-            error={errors.value}
-          />
-
-          <Input
-            label="Monto Total *"
-            type="number"
-            step="0.01"
-            value={formData.totalAmount}
-            onChange={(e) => handleInputChange('totalAmount', e.target.value)}
-            placeholder="0.00"
-            error={errors.totalAmount}
-          />
-
-          <Input
-            label="Consumo"
-            type="number"
-            step="0.01"
-            value={formData.consumption}
-            onChange={(e) => handleInputChange('consumption', e.target.value)}
-            placeholder="0.00"
-            error={errors.consumption}
-          />
-
-          <Select
-            label="Unidad de Medida"
-            value={formData.unitOfMeasure}
-            options={unitOptions}
-            onChange={(e) => handleInputChange('unitOfMeasure', e.target.value)}
-          />
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Montos y Consumos</h2>
+          <Button type="button" size="sm" onClick={addConsumption}>
+            <Plus className="w-4 h-4 mr-2" />
+            Agregar consumo
+          </Button>
+        </div>
+        <div className="space-y-6">
+          {formData.consumptions.map((consumption, idx) => {
+            const providers = providerOptions[consumption.serviceType as ServiceType] || [];
+            return (
+              <div key={idx} className="border border-gray-200 rounded-lg p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-700">Consumo #{idx + 1}</p>
+                  {formData.consumptions.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeConsumption(idx)}
+                      className="text-[#cf1b22] hover:text-[#7f0c12] inline-flex items-center text-sm"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" /> Eliminar
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select
+                    label="Tipo de Servicio *"
+                    value={consumption.serviceType}
+                    options={serviceTypeOptions}
+                    onChange={(e) => handleConsumptionChange(idx, 'serviceType', e.target.value)}
+                    error={errors[`consumptions.${idx}.serviceType`]}
+                  />
+                  <Select
+                    label="Proveedor *"
+                    value={consumption.provider}
+                    options={providers}
+                    onChange={(e) => handleConsumptionChange(idx, 'provider', e.target.value)}
+                    placeholder="Seleccione un proveedor"
+                    error={errors[`consumptions.${idx}.provider`]}
+                  />
+                  <Input
+                    label="Período de consumo (Desde) *"
+                    type="date"
+                    value={consumption.periodFrom}
+                    onChange={(e) => handleConsumptionChange(idx, 'periodFrom', e.target.value)}
+                    error={errors[`consumptions.${idx}.periodFrom`]}
+                  />
+                  <Input
+                    label="Período de consumo (Hasta) *"
+                    type="date"
+                    value={consumption.periodTo}
+                    onChange={(e) => handleConsumptionChange(idx, 'periodTo', e.target.value)}
+                    error={errors[`consumptions.${idx}.periodTo`]}
+                  />
+                  <Input
+                    label="Monto de la Factura *"
+                    type="number"
+                    step="0.01"
+                    value={consumption.value}
+                    onChange={(e) => handleConsumptionChange(idx, 'value', e.target.value)}
+                    placeholder="0.00"
+                    error={errors[`consumptions.${idx}.value`]}
+                  />
+                  <Input
+                    label="Monto Total *"
+                    type="number"
+                    step="0.01"
+                    value={consumption.totalAmount}
+                    onChange={(e) => handleConsumptionChange(idx, 'totalAmount', e.target.value)}
+                    placeholder="0.00"
+                    error={errors[`consumptions.${idx}.totalAmount`]}
+                  />
+                  <Input
+                    label="Consumo"
+                    type="number"
+                    step="0.01"
+                    value={consumption.consumption}
+                    onChange={(e) => handleConsumptionChange(idx, 'consumption', e.target.value)}
+                    placeholder="0.00"
+                    error={errors[`consumptions.${idx}.consumption`]}
+                  />
+                  <Select
+                    label="Unidad de Medida"
+                    value={consumption.unitOfMeasure}
+                    options={unitOptions}
+                    onChange={(e) => handleConsumptionChange(idx, 'unitOfMeasure', e.target.value)}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </Card>
 

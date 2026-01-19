@@ -8,6 +8,21 @@ export type UserRole = 'basic_user' | 'area_coordinator';
 
 export type NotificationType = 'due_reminder' | 'budget_alert' | 'approval_request' | 'bill_approved';
 
+export interface BillConsumption {
+  id?: string;
+  billId?: string;
+  serviceType: ServiceType;
+  provider: string;
+  periodFrom: string; // date ISO
+  periodTo: string;   // date ISO
+  value: number;
+  totalAmount: number;
+  consumption?: number;
+  unitOfMeasure?: UnitType;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
 export interface UtilityBill {
   id: string;
   user_id: string;
@@ -32,25 +47,30 @@ export interface UtilityBill {
   approvedAt?: Date | string;
   createdAt: Date | string;
   updatedAt: Date | string;
+  consumptions?: BillConsumption[];
 }
 
 export interface UtilityBillFormData {
-  serviceType: ServiceType;
-  provider: string;
   description: string;
-  value: string;
   period: string;
   invoiceNumber: string;
   contractNumber: string;
-  totalAmount: string;
-  consumption: string;
-  unitOfMeasure: UnitType;
   costCenter: string;
   location: string;
   dueDate: string;
   attachedDocument: File | null;
   status: BillStatus;
   notes: string;
+  consumptions: Array<{
+    serviceType: ServiceType;
+    provider: string;
+    periodFrom: string;
+    periodTo: string;
+    value: string;
+    totalAmount: string;
+    consumption: string;
+    unitOfMeasure: UnitType;
+  }>;
 }
 
 export interface UserProfile {

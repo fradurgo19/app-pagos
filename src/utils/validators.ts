@@ -7,20 +7,27 @@ export interface ValidationErrors {
 export const validateBillForm = (formData: UtilityBillFormData): ValidationErrors => {
   const errors: ValidationErrors = {};
 
-  if (!formData.serviceType) {
-    errors.serviceType = 'El tipo de servicio es requerido';
-  }
-
-  if (!formData.provider.trim()) {
-    errors.provider = 'El proveedor es requerido';
-  }
-
-  if (!formData.value || parseFloat(formData.value) <= 0) {
-    errors.value = 'El valor debe ser mayor a 0';
-  }
-
-  if (!formData.totalAmount || parseFloat(formData.totalAmount) <= 0) {
-    errors.totalAmount = 'El monto total debe ser mayor a 0';
+  if (!formData.consumptions || formData.consumptions.length === 0) {
+    errors.consumptions = 'Debe agregar al menos un consumo';
+  } else {
+    formData.consumptions.forEach((c, idx) => {
+      if (!c.serviceType) errors[`consumptions.${idx}.serviceType`] = 'Requerido';
+      if (!c.provider.trim()) errors[`consumptions.${idx}.provider`] = 'Requerido';
+      if (!c.periodFrom) errors[`consumptions.${idx}.periodFrom`] = 'Requerido';
+      if (!c.periodTo) errors[`consumptions.${idx}.periodTo`] = 'Requerido';
+      if (c.periodFrom && c.periodTo && c.periodFrom > c.periodTo) {
+        errors[`consumptions.${idx}.periodTo`] = 'La fecha hasta debe ser mayor o igual a desde';
+      }
+      if (!c.value || parseFloat(c.value) <= 0) {
+        errors[`consumptions.${idx}.value`] = 'Debe ser mayor a 0';
+      }
+      if (!c.totalAmount || parseFloat(c.totalAmount) <= 0) {
+        errors[`consumptions.${idx}.totalAmount`] = 'Debe ser mayor a 0';
+      }
+      if (c.consumption && parseFloat(c.consumption) < 0) {
+        errors[`consumptions.${idx}.consumption`] = 'No puede ser negativo';
+      }
+    });
   }
 
   if (!formData.period) {
@@ -38,10 +45,6 @@ export const validateBillForm = (formData: UtilityBillFormData): ValidationError
 
   if (!formData.dueDate) {
     errors.dueDate = 'La fecha de vencimiento es requerida';
-  }
-
-  if (formData.consumption && parseFloat(formData.consumption) < 0) {
-    errors.consumption = 'El consumo no puede ser negativo';
   }
 
   return errors;

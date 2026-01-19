@@ -14,6 +14,8 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
   // Debug: Ver qué datos tiene el bill
   console.log('🔍 Bill completo en modal:', bill);
   console.log('🔍 dueDate específicamente:', bill.dueDate);
+
+  const primaryConsumption = bill.consumptions && bill.consumptions.length > 0 ? bill.consumptions[0] : null;
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -54,7 +56,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
                 <div>
                   <p className="text-sm text-gray-600">Tipo de Servicio</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {translateServiceType(bill.serviceType)}
+                    {translateServiceType(primaryConsumption?.serviceType || bill.serviceType)}
                   </p>
                 </div>
               </div>
@@ -68,7 +70,7 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Proveedor</p>
-                  <p className="text-lg font-semibold text-gray-900">{bill.provider || '-'}</p>
+                  <p className="text-lg font-semibold text-gray-900">{primaryConsumption?.provider || bill.provider || '-'}</p>
                 </div>
               </div>
             </div>
@@ -99,6 +101,38 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
               </div>
             </div>
           </div>
+
+          {/* Consumos */}
+          {bill.consumptions && bill.consumptions.length > 0 && (
+            <div className="border border-gray-200 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Consumos registrados</h3>
+              <div className="space-y-3">
+                {bill.consumptions.map((c) => (
+                  <div key={c.id || `${c.serviceType}-${c.periodFrom}-${c.periodTo}`} className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded-lg">
+                    <div>
+                      <p className="text-xs text-gray-500">Servicio / Proveedor</p>
+                      <p className="font-medium text-gray-900">
+                        {translateServiceType(c.serviceType)} - {c.provider}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Período de consumo</p>
+                      <p className="font-medium text-gray-900">
+                        {c.periodFrom} → {c.periodTo}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Montos / Consumo</p>
+                      <p className="font-medium text-gray-900">
+                        {formatCurrency(c.totalAmount)} ({c.value} base)
+                        {c.consumption ? ` • ${c.consumption} ${c.unitOfMeasure || ''}` : ''}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Detalles Adicionales */}
           <div className="border-t border-gray-200 pt-6">

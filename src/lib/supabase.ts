@@ -113,6 +113,43 @@ export interface Database {
           approved_at?: string;
         };
       };
+      bill_consumptions: {
+        Row: {
+          id: string;
+          bill_id: string;
+          service_type: string;
+          provider: string;
+          period_from: string;
+          period_to: string;
+          value: number;
+          total_amount: number;
+          consumption: number | null;
+          unit_of_measure: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          bill_id: string;
+          service_type: string;
+          provider: string;
+          period_from: string;
+          period_to: string;
+          value: number;
+          total_amount: number;
+          consumption?: number;
+          unit_of_measure?: string;
+        };
+        Update: {
+          service_type?: string;
+          provider?: string;
+          period_from?: string;
+          period_to?: string;
+          value?: number;
+          total_amount?: number;
+          consumption?: number;
+          unit_of_measure?: string;
+        };
+      };
       budget_thresholds: {
         Row: {
           id: string;
