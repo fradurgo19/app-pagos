@@ -160,21 +160,68 @@ export const ReportsPage: React.FC = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['Periodo', 'Tipo de Servicio', 'Proveedor', 'N° Contrato', 'N° Factura', 'Monto', 'Estado', 'Fecha Vencimiento'];
-    const rows = bills.map(bill => [
-      bill.period,
-      getServiceTypeLabel(bill.serviceType),
-      bill.provider || '',
-      bill.contractNumber || '',
-      bill.invoiceNumber || '',
-      bill.totalAmount.toString(),
-      bill.status,
-      formatDate(bill.dueDate)
-    ]);
+    const headers = [
+      'Periodo factura',
+      'Servicio',
+      'Proveedor',
+      'Periodo consumo desde',
+      'Periodo consumo hasta',
+      'Monto total',
+      'Monto base',
+      'Consumo',
+      'Unidad',
+      'N° Contrato',
+      'N° Factura',
+      'Ubicación',
+      'Estado',
+      'Fecha Vencimiento'
+    ];
+
+    const rows: string[][] = [];
+
+    bills.forEach((bill) => {
+      if (bill.consumptions && bill.consumptions.length > 0) {
+        bill.consumptions.forEach((c) => {
+          rows.push([
+            bill.period,
+            getServiceTypeLabel(c.serviceType || bill.serviceType),
+            c.provider || bill.provider || '',
+            c.periodFrom || '',
+            c.periodTo || '',
+            formatCurrency(c.totalAmount || 0),
+            formatCurrency(c.value || 0),
+            c.consumption ? c.consumption.toString() : '',
+            c.unitOfMeasure || '',
+            bill.contractNumber || '',
+            bill.invoiceNumber || '',
+            bill.location,
+            bill.status,
+            formatDate(bill.dueDate)
+          ]);
+        });
+      } else {
+        rows.push([
+          bill.period,
+          getServiceTypeLabel(bill.serviceType),
+          bill.provider || '',
+          '',
+          '',
+          formatCurrency(bill.totalAmount),
+          formatCurrency(bill.value || bill.totalAmount),
+          bill.consumption ? bill.consumption.toString() : '',
+          bill.unitOfMeasure || '',
+          bill.contractNumber || '',
+          bill.invoiceNumber || '',
+          bill.location,
+          bill.status,
+          formatDate(bill.dueDate)
+        ]);
+      }
+    });
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map(row => row.map(cell => `"${cell ?? ''}"`).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
