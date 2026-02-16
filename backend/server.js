@@ -426,16 +426,18 @@ app.get('/api/bills', authenticateToken, async (req, res) => {
   }
 });
 
-// Obtener factura por ID
+// Obtener factura por ID (Supabase para evitar SASL en entornos serverless)
 app.get('/api/bills/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query(
-      'SELECT * FROM utility_bills WHERE id = $1 AND user_id = $2',
-      [id, req.user.id]
-    );
+    const { data: billRow, error: billError } = await supabaseDb
+      .from('utility_bills')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', req.user.id)
+      .single();
 
-    if (result.rows.length === 0) {
+    if (billError || !billRow) {
       return res.status(404).json({ error: 'Factura no encontrada' });
     }
 
@@ -450,7 +452,7 @@ app.get('/api/bills/:id', authenticateToken, async (req, res) => {
     }
 
     const consumptions = (consumptionsData || []).map(transformConsumptionToFrontend);
-    res.json(transformBillToFrontend(result.rows[0], consumptions));
+    res.json(transformBillToFrontend(billRow, consumptions));
   } catch (error) {
     console.error('Error al obtener factura:', error);
     res.status(500).json({ error: 'Error al obtener factura' });
