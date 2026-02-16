@@ -12,6 +12,7 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage').then(module => 
 const BillsPage = lazy(() => import('./pages/BillsPage').then(module => ({ default: module.BillsPage })));
 const NewBillPage = lazy(() => import('./pages/NewBillPage').then(module => ({ default: module.NewBillPage })));
 const ReportsPage = lazy(() => import('./pages/ReportsPage').then(module => ({ default: module.ReportsPage })));
+const EditBillPage = lazy(() => import('./pages/EditBillPage').then(module => ({ default: module.EditBillPage })));
 const UsersPage = lazy(() => import('./pages/UsersPage').then(module => ({ default: module.UsersPage })));
 
 // Componente de carga mientras se cargan las páginas
@@ -59,6 +60,11 @@ function App() {
             <Route path="/reports" element={
               <ProtectedLayout>
                 <ReportsPage />
+              </ProtectedLayout>
+            } />
+            <Route path="/reports/edit/:id" element={
+              <ProtectedLayout>
+                <EditBillPage />
               </ProtectedLayout>
             } />
             <Route path="/users" element={

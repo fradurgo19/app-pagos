@@ -38,12 +38,18 @@ const initialFormData: UtilityBillFormData = {
   ]
 };
 
-export const BillForm: React.FC = () => {
-  const [formData, setFormData] = useState<UtilityBillFormData>(initialFormData);
+export interface BillFormProps {
+  billId?: string;
+  initialData?: UtilityBillFormData;
+}
+
+export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
+  const [formData, setFormData] = useState<UtilityBillFormData>(initialData ?? initialFormData);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const navigate = useNavigate();
+  const isEditMode = Boolean(billId);
 
   const serviceTypeOptions = [
     { value: 'electricity', label: 'Electricidad' },
@@ -368,7 +374,11 @@ export const BillForm: React.FC = () => {
         consumptions: mappedConsumptions
       };
 
-      await billService.create(billData);
+      if (isEditMode && billId) {
+        await billService.update(billId, billData);
+      } else {
+        await billService.create(billData);
+      }
       navigate('/reports');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al guardar la factura';
@@ -588,7 +598,7 @@ export const BillForm: React.FC = () => {
             isLoading={loading}
           >
             <Send className="w-4 h-4 mr-2" />
-            Enviar Factura
+            {isEditMode ? 'Guardar cambios' : 'Enviar Factura'}
           </Button>
         </div>
       </form>

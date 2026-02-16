@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FileText, Calendar, DollarSign, Package, Eye, Download, File, Users as UsersIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, Calendar, DollarSign, Package, Eye, Download, File, Users as UsersIcon, Pencil } from 'lucide-react';
 import { Card } from '../atoms/Card';
 import { Button } from '../atoms/Button';
 import { useAuth } from '../context/AuthContext';
@@ -15,6 +16,7 @@ interface BillsByPeriod {
 
 export const ReportsPage: React.FC = () => {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [bills, setBills] = useState<UtilityBill[]>([]);
   const [allBills, setAllBills] = useState<UtilityBill[]>([]);
   const [loading, setLoading] = useState(true);
@@ -448,6 +450,14 @@ export const ReportsPage: React.FC = () => {
                             <File className="w-4 h-4" />
                           </a>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/reports/edit/${bill.id}`)}
+                          title="Modificar factura"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
