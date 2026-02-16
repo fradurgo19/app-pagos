@@ -641,59 +641,42 @@ app.put('/api/bills/:id', authenticateToken, async (req, res) => {
       updates.unitOfMeasure = updates.unitOfMeasure || first?.unitOfMeasure;
     }
 
-    const result = await pool.query(
-      `UPDATE utility_bills SET
-        service_type = COALESCE($1, service_type),
-        provider = COALESCE($2, provider),
-        description = COALESCE($3, description),
-        value = COALESCE($4, value),
-        period = COALESCE($5, period),
-        invoice_number = COALESCE($6, invoice_number),
-        contract_number = COALESCE($7, contract_number),
-        total_amount = COALESCE($8, total_amount),
-        consumption = COALESCE($9, consumption),
-        unit_of_measure = COALESCE($10, unit_of_measure),
-        cost_center = COALESCE($11, cost_center),
-        location = COALESCE($12, location),
-        due_date = COALESCE($13, due_date),
-        document_url = COALESCE($14, document_url),
-        document_name = COALESCE($15, document_name),
-        status = COALESCE($16, status),
-        notes = COALESCE($17, notes),
-        approved_by = COALESCE($18, approved_by),
-        approved_at = COALESCE($19, approved_at)
-      WHERE id = $20 AND user_id = $21
-      RETURNING *`,
-      [
-        updates.serviceType,
-        updates.provider,
-        updates.description,
-        updates.value,
-        updates.period,
-        updates.invoiceNumber,
-        updates.contractNumber,
-        updates.totalAmount,
-        updates.consumption,
-        updates.unitOfMeasure,
-        updates.costCenter,
-        updates.location,
-        updates.dueDate,
-        updates.documentUrl,
-        updates.documentName,
-        updates.status,
-        updates.notes,
-        updates.approvedBy,
-        updates.approvedAt,
-        id,
-        req.user.id
-      ]
+    const rawPayload = {
+      service_type: updates.serviceType,
+      provider: updates.provider,
+      description: updates.description,
+      value: updates.value,
+      period: updates.period,
+      invoice_number: updates.invoiceNumber,
+      contract_number: updates.contractNumber,
+      total_amount: updates.totalAmount,
+      consumption: updates.consumption,
+      unit_of_measure: updates.unitOfMeasure,
+      cost_center: updates.costCenter,
+      location: updates.location,
+      due_date: updates.dueDate,
+      document_url: updates.documentUrl,
+      document_name: updates.documentName,
+      status: updates.status,
+      notes: updates.notes,
+      approved_by: updates.approvedBy,
+      approved_at: updates.approvedAt
+    };
+    const updatePayload = Object.fromEntries(
+      Object.entries(rawPayload).filter(([, v]) => v !== undefined)
     );
 
-    if (result.rows.length === 0) {
+    const { data: updatedRow, error: updateError } = await supabaseDb
+      .from('utility_bills')
+      .update(updatePayload)
+      .eq('id', id)
+      .eq('user_id', req.user.id)
+      .select()
+      .single();
+
+    if (updateError || !updatedRow) {
       return res.status(404).json({ error: 'Factura no encontrada' });
     }
-
-    const updatedRow = result.rows[0];
 
     // Si vienen consumos, reemplazar los existentes
     if (incomingConsumptions) {
