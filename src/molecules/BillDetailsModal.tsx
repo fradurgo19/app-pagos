@@ -122,9 +122,9 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Montos / Consumo</p>
+                      <p className="text-xs text-gray-500">Monto / Consumo</p>
                       <p className="font-medium text-gray-900">
-                        {formatCurrency(c.totalAmount)} ({c.value} base)
+                        {formatCurrency(c.totalAmount || c.value || 0)}
                         {c.consumption ? ` • ${c.consumption} ${c.unitOfMeasure || ''}` : ''}
                       </p>
                     </div>
@@ -149,10 +149,6 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
               <div>
                 <p className="text-gray-600">Centro de Costos</p>
                 <p className="font-medium text-gray-900">{bill.costCenter || '-'}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Monto de Factura</p>
-                <p className="font-medium text-gray-900">{formatCurrency(bill.value)}</p>
               </div>
               {bill.consumption && (
                 <>

@@ -9,7 +9,7 @@ import { Card } from '../atoms/Card';
 import { FileUpload } from '../molecules/FileUpload';
 import { UtilityBillFormData, ServiceType, UnitType } from '../types';
 import { validateBillForm, hasValidationErrors, ValidationErrors } from '../utils/validators';
-import { parseCurrencyInput, getCurrentPeriod } from '../utils/formatters';
+import { parseCurrencyInput, getCurrentPeriod, formatCurrency } from '../utils/formatters';
 import { billService } from '../services/billService';
 import { API_URL } from '../config';
 
@@ -220,6 +220,9 @@ export const BillForm: React.FC = () => {
         ...updatedConsumptions[index],
         [field]: value
       };
+      if (field === 'value') {
+        updatedItem.totalAmount = value;
+      }
       updatedConsumptions[index] = updatedItem;
       const newDescription = updateDescription(updatedConsumptions, prev.contractNumber);
       return { ...prev, consumptions: updatedConsumptions, description: newDescription };
@@ -255,8 +258,8 @@ export const BillForm: React.FC = () => {
   };
 
   const formatWithSeparators = (value: string, maxFractionDigits = 2) => {
-    if (!value) return '';
-    const numeric = Number(value);
+    if (!value || !String(value).trim()) return '';
+    const numeric = parseCurrencyInput(String(value));
     if (isNaN(numeric)) return value;
     return numeric.toLocaleString('es-CO', {
       minimumFractionDigits: 0,
@@ -272,9 +275,13 @@ export const BillForm: React.FC = () => {
     setFormData(prev => {
       const updatedConsumptions: UtilityBillFormData['consumptions'] = [...prev.consumptions];
       const current = updatedConsumptions[index];
-      const raw = (current as any)[field] as string;
+      const raw = String(current[field] ?? '');
       const formatted = formatWithSeparators(raw, fractionDigits);
-      updatedConsumptions[index] = { ...current, [field]: formatted } as UtilityBillFormData['consumptions'][number];
+      const next = { ...current, [field]: formatted } as UtilityBillFormData['consumptions'][number];
+      if (field === 'value') {
+        next.totalAmount = formatted;
+      }
+      updatedConsumptions[index] = next;
       return { ...prev, consumptions: updatedConsumptions };
     });
   };
@@ -472,32 +479,24 @@ export const BillForm: React.FC = () => {
                     error={errors[`consumptions.${idx}.periodTo`]}
                   />
                   <Input
-                    label="Monto de la Factura *"
-                    type="number"
-                    step="0.01"
+                    label="Monto *"
+                    type="text"
+                    inputMode="decimal"
                     value={consumption.value}
                     onChange={(e) => handleConsumptionChange(idx, 'value', e.target.value)}
                     onBlur={() => handleConsumptionBlur(idx, 'value', 2)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                     placeholder="0.00"
                     error={errors[`consumptions.${idx}.value`]}
                   />
                   <Input
-                    label="Monto Total *"
-                    type="number"
-                    step="0.01"
-                    value={consumption.totalAmount}
-                    onChange={(e) => handleConsumptionChange(idx, 'totalAmount', e.target.value)}
-                    onBlur={() => handleConsumptionBlur(idx, 'totalAmount', 2)}
-                    placeholder="0.00"
-                    error={errors[`consumptions.${idx}.totalAmount`]}
-                  />
-                  <Input
                     label="Consumo"
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={consumption.consumption}
                     onChange={(e) => handleConsumptionChange(idx, 'consumption', e.target.value)}
                     onBlur={() => handleConsumptionBlur(idx, 'consumption', 3)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
                     placeholder="0.00"
                     error={errors[`consumptions.${idx}.consumption`]}
                   />
@@ -512,6 +511,18 @@ export const BillForm: React.FC = () => {
             );
           })}
         </div>
+        {formData.consumptions.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+            <div className="text-right">
+              <p className="text-sm text-gray-500 mb-0.5">Total de montos (informativo)</p>
+              <p className="text-xl font-bold text-[#cf1b22]" aria-live="polite">
+                {formatCurrency(
+                  formData.consumptions.reduce((sum, c) => sum + parseCurrencyInput(c.value), 0)
+                )}
+              </p>
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card>

@@ -1,4 +1,5 @@
 import { UtilityBillFormData } from '../types';
+import { parseCurrencyInput } from './formatters';
 
 export interface ValidationErrors {
   [key: string]: string;
@@ -18,11 +19,8 @@ export const validateBillForm = (formData: UtilityBillFormData): ValidationError
       if (c.periodFrom && c.periodTo && c.periodFrom > c.periodTo) {
         errors[`consumptions.${idx}.periodTo`] = 'La fecha hasta debe ser mayor o igual a desde';
       }
-      if (!c.value || parseFloat(c.value) <= 0) {
-        errors[`consumptions.${idx}.value`] = 'Debe ser mayor a 0';
-      }
-      if (!c.totalAmount || parseFloat(c.totalAmount) <= 0) {
-        errors[`consumptions.${idx}.totalAmount`] = 'Debe ser mayor a 0';
+      if (!c.value || parseCurrencyInput(c.value) <= 0) {
+        errors[`consumptions.${idx}.value`] = 'El monto debe ser mayor a 0';
       }
       if (c.consumption && parseFloat(c.consumption) < 0) {
         errors[`consumptions.${idx}.consumption`] = 'No puede ser negativo';

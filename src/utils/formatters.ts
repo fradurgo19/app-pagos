@@ -45,8 +45,42 @@ export const formatPeriod = (period: string): string => {
   });
 };
 
+/**
+ * Parsea números en formato colombiano (punto como miles, coma como decimal)
+ * o formato internacional (punto como decimal).
+ */
+export const parseColombianNumber = (value: string): number => {
+  if (!value || !value.trim()) return 0;
+  const val = value.trim().replace(/\s/g, '');
+  if (val.includes(',')) {
+    const parts = val.split(',');
+    const intPart = (parts[0] || '0').replace(/\./g, '');
+    const decPart = (parts[1] || '0').replace(/\D/g, '');
+    return parseFloat(intPart + '.' + decPart) || 0;
+  }
+  const dotIdx = val.indexOf('.');
+  if (dotIdx === -1) return parseFloat(val.replace(/\D/g, '')) || 0;
+  const afterDot = val.substring(dotIdx + 1).replace(/\D/g, '');
+  if (afterDot.length === 3 && /^\d{3}$/.test(afterDot)) {
+    return parseFloat(val.replace(/\./g, '')) || 0;
+  }
+  return parseFloat(val.replace(/[^0-9.]/g, '')) || 0;
+};
+
 export const parseCurrencyInput = (value: string): number => {
-  const cleaned = value.replace(/[^0-9.]/g, '');
+  if (!value || !value.trim()) return 0;
+  const val = value.trim();
+  if (val.includes(',')) {
+    return parseColombianNumber(val);
+  }
+  const dotIdx = val.indexOf('.');
+  if (dotIdx !== -1) {
+    const after = val.substring(dotIdx + 1).replace(/\D/g, '');
+    if (after.length === 3 && /^\d{3}$/.test(after)) {
+      return parseFloat(val.replace(/\./g, '')) || 0;
+    }
+  }
+  const cleaned = val.replace(/[^0-9.]/g, '');
   return parseFloat(cleaned) || 0;
 };
 

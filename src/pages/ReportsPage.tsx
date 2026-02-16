@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FileText, Calendar, DollarSign, Package, Eye, Download, File, Users as UsersIcon } from 'lucide-react';
 import { Card } from '../atoms/Card';
-import { Badge } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { useAuth } from '../context/AuthContext';
 import { billService } from '../services/billService';
@@ -26,28 +25,13 @@ export const ReportsPage: React.FC = () => {
 
   const isAdmin = profile?.role === 'area_coordinator';
 
-  useEffect(() => {
-    loadBills();
-    if (isAdmin) {
-      loadUsers();
-    }
-  }, []);
-
-  useEffect(() => {
-    filterBills();
-  }, [selectedUser, allBills]);
-
-  const loadBills = async () => {
+  const loadBills = useCallback(async () => {
     try {
       setLoading(true);
       const data = await billService.getAll();
-      
-      // Si es admin, ver todas las facturas; si no, solo las propias
-      const filteredBills = isAdmin 
-        ? data 
+      const filteredBills = isAdmin
+        ? data
         : data.filter(bill => bill.user_id === profile?.id);
-      
-      // Ordenar por periodo descendente
       filteredBills.sort((a, b) => b.period.localeCompare(a.period));
       setAllBills(filteredBills);
       setBills(filteredBills);
@@ -56,9 +40,9 @@ export const ReportsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdmin, profile?.id]);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       const token = localStorage.getItem('auth_token');
       const response = await fetch(`${API_URL}/api/users`, {
@@ -67,7 +51,6 @@ export const ReportsPage: React.FC = () => {
           'Content-Type': 'application/json'
         }
       });
-
       if (response.ok) {
         const data = await response.json();
         setUsers(data);
@@ -75,18 +58,26 @@ export const ReportsPage: React.FC = () => {
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
     }
-  };
+  }, []);
 
-  const filterBills = () => {
+  const filterBills = useCallback(() => {
     let filtered = [...allBills];
-    
-    // Filtrar por usuario si se seleccionó uno específico
     if (selectedUser !== 'all') {
       filtered = filtered.filter(bill => bill.user_id === selectedUser);
     }
-    
     setBills(filtered);
-  };
+  }, [allBills, selectedUser]);
+
+  useEffect(() => {
+    loadBills();
+    if (isAdmin) {
+      loadUsers();
+    }
+  }, [loadBills, loadUsers, isAdmin]);
+
+  useEffect(() => {
+    filterBills();
+  }, [filterBills]);
 
   // Agrupar facturas por periodo
   const billsByPeriod: BillsByPeriod = bills.reduce((acc, bill) => {
@@ -166,8 +157,7 @@ export const ReportsPage: React.FC = () => {
       'Proveedor',
       'Periodo consumo desde',
       'Periodo consumo hasta',
-      'Monto total',
-      'Monto base',
+      'Monto',
       'Consumo',
       'Unidad',
       'N° Contrato',
@@ -188,8 +178,7 @@ export const ReportsPage: React.FC = () => {
             c.provider || bill.provider || '',
             c.periodFrom || '',
             c.periodTo || '',
-            formatCurrency(c.totalAmount || 0),
-            formatCurrency(c.value || 0),
+            formatCurrency(c.totalAmount || c.value || 0),
             c.consumption ? c.consumption.toString() : '',
             c.unitOfMeasure || '',
             bill.contractNumber || '',
@@ -206,8 +195,7 @@ export const ReportsPage: React.FC = () => {
           bill.provider || '',
           '',
           '',
-          formatCurrency(bill.totalAmount),
-          formatCurrency(bill.value || bill.totalAmount),
+          formatCurrency(bill.totalAmount || bill.value || 0),
           bill.consumption ? bill.consumption.toString() : '',
           bill.unitOfMeasure || '',
           bill.contractNumber || '',
@@ -373,6 +361,7 @@ export const ReportsPage: React.FC = () => {
           {filteredPeriods.map(period => {
             const periodBills = billsByPeriod[period];
             const periodTotal = periodBills.reduce((sum, bill) => sum + bill.totalAmount, 0);
+            const periodUserCount = new Set(periodBills.map(b => b.user_id)).size;
 
             return (
               <Card key={period}>
@@ -384,10 +373,10 @@ export const ReportsPage: React.FC = () => {
                         Periodo: {period}
                       </h2>
                       <p className="text-sm text-gray-600 mt-1">
-                        {periodBills.length} factura{periodBills.length !== 1 ? 's' : ''} • Total: {formatCurrency(periodTotal)}
+                        {periodBills.length} factura{periodBills.length === 1 ? '' : 's'} • Total: {formatCurrency(periodTotal)}
                         {isAdmin && selectedUser === 'all' && (
                           <span className="ml-2 text-[#cf1b22]">
-                            • {new Set(periodBills.map(b => b.user_id)).size} usuario{new Set(periodBills.map(b => b.user_id)).size !== 1 ? 's' : ''}
+                            • {periodUserCount} usuario{periodUserCount === 1 ? '' : 's'}
                           </span>
                         )}
                       </p>
