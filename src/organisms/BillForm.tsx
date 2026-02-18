@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Plus, Trash2 } from 'lucide-react';
 import { Input } from '../atoms/Input';
@@ -7,18 +7,20 @@ import { Textarea } from '../atoms/Textarea';
 import { Button } from '../atoms/Button';
 import { Card } from '../atoms/Card';
 import { FileUpload } from '../molecules/FileUpload';
-import { UtilityBillFormData, ServiceType, UnitType } from '../types';
+import { UtilityBillFormData, ServiceType } from '../types';
 import { validateBillForm, hasValidationErrors, ValidationErrors } from '../utils/validators';
 import { parseCurrencyInput, getCurrentPeriod, formatCurrency } from '../utils/formatters';
 import { billService } from '../services/billService';
 import { API_URL } from '../config';
+
+type ConsumptionFormItem = UtilityBillFormData['consumptions'][number];
 
 const initialFormData: UtilityBillFormData = {
   description: '',
   period: getCurrentPeriod(),
   invoiceNumber: '',
   contractNumber: '',
-  costCenter: '',
+  costCenter: 'Administración',
   location: '',
   dueDate: '',
   attachedDocument: null,
@@ -48,6 +50,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const consumptionKeysRef = useRef(new WeakMap<ConsumptionFormItem, string>());
   const navigate = useNavigate();
   const isEditMode = Boolean(billId);
 
@@ -102,6 +105,12 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     electricity: [
       { value: 'Enel Colombia (Codensa)', label: 'Enel Colombia (Codensa) - Bogotá, Cundinamarca, Tolima' },
       { value: 'EPM', label: 'EPM - Empresas Públicas de Medellín (Antioquia, Córdoba)' },
+      { value: 'EPM - Empresas Públicas de Medellín (Aseo)', label: 'EPM - Empresas Públicas de Medellín (Aseo)' },
+      { value: 'EPM - Empresas Públicas de Medellín (Alumbrado público)', label: 'EPM - Empresas Públicas de Medellín (Alumbrado público)' },
+      { value: 'EPM - Empresas Públicas de Medellín (Acueducto)', label: 'EPM - Empresas Públicas de Medellín (Acueducto)' },
+      { value: 'EPM - Empresas Públicas de Medellín (Alcantarillado)', label: 'EPM - Empresas Públicas de Medellín (Alcantarillado)' },
+      { value: 'EPM - Empresas Públicas de Medellín (Energía)', label: 'EPM - Empresas Públicas de Medellín (Energía)' },
+      { value: 'EPM - Empresas Públicas de Medellín (Otros)', label: 'EPM - Empresas Públicas de Medellín (Otros)' },
       { value: 'Celsia', label: 'Celsia (Valle del Cauca, Tolima, Caribe)' },
       { value: 'CHEC', label: 'CHEC - Central Hidroeléctrica de Caldas (Eje cafetero)' },
       { value: 'Air-e', label: 'Air-e (Atlántico, La Guajira, Magdalena)' },
@@ -112,7 +121,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'EDEQ', label: 'EDEQ - Energía del Quindío (Quindío)' }
     ],
     water: [
-      { value: 'EAAB', label: 'EAAB - Acueducto de Bogotá (Bogotá)' },
+      { value: 'EAAB', label: 'Empresa de Acueducto y Alcantarillado de Bogotá-ESP' },
       { value: 'EPM', label: 'EPM (Medellín y municipios de Antioquia)' },
       { value: 'EMCALI', label: 'EMCALI (Cali)' },
       { value: 'Acuacar', label: 'Acuacar - Aguas de Cartagena (Cartagena)' },
@@ -160,7 +169,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'Bogotá Limpia', label: 'Bogotá Limpia (Bogotá)' }
     ],
     sewer: [
-      { value: 'EAAB', label: 'EAAB - Acueducto de Bogotá (Bogotá)' },
+      { value: 'EAAB', label: 'Empresa de Acueducto y Alcantarillado de Bogotá-ESP' },
       { value: 'EPM', label: 'EPM (Medellín y municipios de Antioquia)' },
       { value: 'EMCALI', label: 'EMCALI (Cali)' },
       { value: 'Acuacar', label: 'Acuacar - Aguas de Cartagena (Cartagena)' },
@@ -180,6 +189,17 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     other: [
       { value: 'Otro', label: 'Otro proveedor' }
     ]
+  };
+
+  const getConsumptionKey = (consumption: ConsumptionFormItem): string => {
+    const existingKey = consumptionKeysRef.current.get(consumption);
+    if (existingKey) return existingKey;
+
+    const generatedKey =
+      globalThis.crypto?.randomUUID?.() ??
+      `consumption-${Math.random().toString(36).slice(2, 11)}`;
+    consumptionKeysRef.current.set(consumption, generatedKey);
+    return generatedKey;
   };
 
   // Obtener proveedores según el tipo de servicio seleccionado
@@ -266,7 +286,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
   const formatWithSeparators = (value: string, maxFractionDigits = 2) => {
     if (!value || !String(value).trim()) return '';
     const numeric = parseCurrencyInput(String(value));
-    if (isNaN(numeric)) return value;
+    if (Number.isNaN(numeric)) return value;
     return numeric.toLocaleString('es-CO', {
       minimumFractionDigits: 0,
       maximumFractionDigits: maxFractionDigits
@@ -349,14 +369,14 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       }
 
       const mappedConsumptions = formData.consumptions.map((c) => ({
-        serviceType: c.serviceType as ServiceType,
+        serviceType: c.serviceType,
         provider: c.provider,
         periodFrom: c.periodFrom,
         periodTo: c.periodTo,
         value: parseCurrencyInput(c.value),
         totalAmount: parseCurrencyInput(c.totalAmount),
-        consumption: c.consumption ? parseFloat(c.consumption) : undefined,
-        unitOfMeasure: c.unitOfMeasure as UnitType
+        consumption: c.consumption ? Number.parseFloat(c.consumption) : undefined,
+        unitOfMeasure: c.unitOfMeasure
       }));
 
       const billData = {
@@ -443,9 +463,9 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
         </div>
         <div className="space-y-6">
           {formData.consumptions.map((consumption, idx) => {
-            const providers = providerOptions[consumption.serviceType as ServiceType] || [];
+            const providers = providerOptions[consumption.serviceType] || [];
             return (
-              <div key={idx} className="border border-gray-200 rounded-lg p-4 space-y-4">
+              <div key={getConsumptionKey(consumption)} className="border border-gray-200 rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-gray-700">Consumo #{idx + 1}</p>
                   {formData.consumptions.length > 1 && (
