@@ -56,7 +56,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
 
   const serviceTypeOptions = [
     { value: 'electricity', label: 'Electricidad' },
-    { value: 'water', label: 'Agua' },
+    { value: 'water', label: 'Acueducto' },
     { value: 'gas', label: 'Gas' },
     { value: 'internet', label: 'Internet' },
     { value: 'phone', label: 'Teléfono' },
@@ -79,26 +79,28 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
   ];
 
   const locationOptions = [
-    { value: 'ITAGUI CL 30 NRO. 41-30', label: 'ITAGUI CL 30 NRO. 41-30' },
-    { value: 'MEDELLIN ALMACEN PALACE. CRA 50 NRO.35-32', label: 'MEDELLIN ALMACEN PALACE. CRA 50 NRO.35-32' },
-    { value: 'SEDE LUBRICANTES CL 29 NRO 41-65', label: 'SEDE LUBRICANTES CL 29 NRO 41-65' },
-    { value: 'CALI CALLE 15 NRO. 38-21 LOCAL 1 y 2 yumbo', label: 'CALI CALLE 15 NRO. 38-21 LOCAL 1 y 2 yumbo' },
-    { value: 'BARRANQUILLA CL 110 NRO.10-427 BODEGA NRO. 8', label: 'BARRANQUILLA CL 110 NRO.10-427 BODEGA NRO. 8' },
-    { value: 'BARRANQUILLA CALLE 110 NRO. 10-427 BODEGA NRO. 7', label: 'BARRANQUILLA CALLE 110 NRO. 10-427 BODEGA NRO. 7' },
-    { value: 'BOGOTA SEDE NUEVA CRA68D Nro.17A - 84', label: 'BOGOTA SEDE NUEVA CRA68D Nro.17A - 84' },
-    { value: 'SEXTA CALLE 6 NRO. 26 -7 3 BOGOTA', label: 'SEXTA CALLE 6 NRO. 26 -7 3 BOGOTA' },
-    { value: 'BUCARAMANGA KM 7 VIA GIRON NRO. 4-80', label: 'BUCARAMANGA KM 7 VIA GIRON NRO. 4-80' },
-    { value: 'MQ BOGOTA DG 16 NRO. 96G- 85', label: 'MQ BOGOTA DG 16 NRO. 96G- 85' },
-    { value: 'MAQUINARIA GUARNE KM26+800 MTS AUT. MED. B', label: 'MAQUINARIA GUARNE KM26+800 MTS AUT. MED. B' },
-    { value: 'CAUCASIA CRA 20 2-170 LC 101 MALL LAS PALMAS', label: 'CAUCASIA CRA 20 2-170 LC 101 MALL LAS PALMAS' },
-    { value: 'CAUCASIA CRA 20 NRO.3 A - 29', label: 'CAUCASIA CRA 20 NRO.3 A - 29' },
-    { value: 'MONTERIA CRA 17 NRO. 76-94 BOSQUES DE SEVILLA', label: 'MONTERIA CRA 17 NRO. 76-94 BOSQUES DE SEVILLA' },
-    { value: 'EL PORTAL. CALLE 35ASUR NRO. 45B -66', label: 'EL PORTAL. CALLE 35ASUR NRO. 45B -66' },
-    { value: 'EL PORTAL. CALLE 35ASUR NRO. 45B -52', label: 'EL PORTAL. CALLE 35ASUR NRO. 45B -52' },
-    { value: 'ISTMINA BOMBA ZEUZ LA 70 ALM ERA EN MVTO', label: 'ISTMINA BOMBA ZEUZ LA 70 ALM ERA EN MVTO' },
-    { value: 'IBAGUE', label: 'IBAGUE' },
-    { value: 'CALLE 70 SUR NRO. 43A - 15 INT 2404 CANTO LUNA', label: 'CALLE 70 SUR NRO. 43A - 15 INT 2404 CANTO LUNA' },
-    { value: 'BOGOTA APTO LA RIVIERA CL 23 NRO.72-91 APT 701', label: 'BOGOTA APTO LA RIVIERA CL 23 NRO.72-91 APT 701' }
+    { value: 'ITAGUI CL 30 NRO. 41-30 - REPUESTOS', label: 'ITAGUI CL 30 NRO. 41-30 - REPUESTOS' },
+    { value: 'MEDELLIN ALMACEN PALACE. CRA 50 NRO.35-32 - REPUESTOS', label: 'MEDELLIN ALMACEN PALACE. CRA 50 NRO.35-32 - REPUESTOS' },
+    { value: 'CALI CALLE 15 NRO. 38-21 LOCAL 1 y 2 yumbo - REPUESTOS', label: 'CALI CALLE 15 NRO. 38-21 LOCAL 1 y 2 yumbo - REPUESTOS' },
+    { value: 'BARRANQUILLA CL 110 NRO.10-427 BODEGA NRO. 8 - REPUESTOS', label: 'BARRANQUILLA CL 110 NRO.10-427 BODEGA NRO. 8 - REPUESTOS' },
+    { value: 'BARRANQUILLA CALLE 110 NRO. 10-427 BODEGA NRO. 7 - REPUESTOS', label: 'BARRANQUILLA CALLE 110 NRO. 10-427 BODEGA NRO. 7 - REPUESTOS' },
+    { value: 'BOGOTA SEDE NUEVA CRA68D Nro.17A - 84 - REPUESTOS', label: 'BOGOTA SEDE NUEVA CRA68D Nro.17A - 84 - REPUESTOS' },
+    { value: 'BOGOTA BODEGA NUEVA CR 80 NRO.16D-54 - REPUESTOS', label: 'BOGOTA BODEGA NUEVA CR 80 NRO.16D-54 - REPUESTOS' },
+    { value: 'SEXTA CALLE 6 NRO. 26 -7 3 BOGOTA - REPUESTOS', label: 'SEXTA CALLE 6 NRO. 26 -7 3 BOGOTA - REPUESTOS' },
+    { value: 'BUCARAMANGA KM 7 VIA GIRON NRO. 4-80 - REPUESTOS', label: 'BUCARAMANGA KM 7 VIA GIRON NRO. 4-80 - REPUESTOS' },
+    { value: 'MQ BOGOTA DG 16 NRO. 96G- 85 - MAQUINARIA', label: 'MQ BOGOTA DG 16 NRO. 96G- 85 - MAQUINARIA' },
+    { value: 'MAQUINARIA GUARNE KM26+800 MTS AUT. MED. B - MAQUINARIA', label: 'MAQUINARIA GUARNE KM26+800 MTS AUT. MED. B - MAQUINARIA' },
+    { value: 'MAQUINARIA GUARNE (CASA NUEVA) VEREDA BELLAVISTA - MAQUINARIA', label: 'MAQUINARIA GUARNE (CASA NUEVA) VEREDA BELLAVISTA - MAQUINARIA' },
+    { value: 'CAUCASIA CRA 20 NRO.3 A - 29 - REPUESTOS', label: 'CAUCASIA CRA 20 NRO.3 A - 29 - REPUESTOS' },
+    { value: 'MONTERIA CRA 17 NRO. 76-94 BOSQUES DE SEVILLA - MAQUINARIA', label: 'MONTERIA CRA 17 NRO. 76-94 BOSQUES DE SEVILLA - MAQUINARIA' },
+    { value: 'EL PORTAL. CALLE 35ASUR NRO. 45B -66 - MAQUINARIA', label: 'EL PORTAL. CALLE 35ASUR NRO. 45B -66 - MAQUINARIA' },
+    { value: 'EL PORTAL. CALLE 35ASUR NRO. 45B -52 - MAQUINARIA', label: 'EL PORTAL. CALLE 35ASUR NRO. 45B -52 - MAQUINARIA' },
+    { value: 'ISTMINA BOMBA ZEUZ LA 70 ALM ERA EN MVTO - REPUESTOS', label: 'ISTMINA BOMBA ZEUZ LA 70 ALM ERA EN MVTO - REPUESTOS' },
+    { value: 'IBAGUE - NO APLICA. EL CANON INCLUYE SS PCOS', label: 'IBAGUE - NO APLICA. EL CANON INCLUYE SS PCOS' },
+    { value: 'CALLE 70 SUR NRO. 43A - 15 INT 2404 CANTO LUNA - MAQUINARIA (WACONDA)', label: 'CALLE 70 SUR NRO. 43A - 15 INT 2404 CANTO LUNA - MAQUINARIA (WACONDA)' },
+    { value: 'BOGOTA APTO LA RIVIERA CL 23 NRO.72-91 APT 701 - MAQUINARIA (WACONDA)', label: 'BOGOTA APTO LA RIVIERA CL 23 NRO.72-91 APT 701 - MAQUINARIA (WACONDA)' },
+    { value: 'CARTAGENA, CRA 18 NRO. 24 45 APTO 703 - FLOR VELASQUEZ. (WACONDA)', label: 'CARTAGENA, CRA 18 NRO. 24 45 APTO 703 - FLOR VELASQUEZ. (WACONDA)' },
+    { value: 'BARRANQUILLA, CRA 51 NRO.96A-79 ED FENIX - MAQUINARIA (WACONDA)', label: 'BARRANQUILLA, CRA 51 NRO.96A-79 ED FENIX - MAQUINARIA (WACONDA)' }
   ];
 
   const providerOptions: Record<ServiceType, Array<{ value: string; label: string }>> = {
@@ -190,6 +192,16 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'Otro', label: 'Otro proveedor' }
     ]
   };
+
+  const allProviderOptions = Object.entries(providerOptions)
+    .filter(([serviceType]) => serviceType !== 'other')
+    .flatMap(([, providers]) => providers)
+    .filter(
+      (provider, index, providersArray) =>
+        providersArray.findIndex(
+          (item) => item.value === provider.value && item.label === provider.label
+        ) === index
+    );
 
   const getConsumptionKey = (consumption: ConsumptionFormItem): string => {
     const existingKey = consumptionKeysRef.current.get(consumption);
@@ -463,7 +475,9 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
         </div>
         <div className="space-y-6">
           {formData.consumptions.map((consumption, idx) => {
-            const providers = providerOptions[consumption.serviceType] || [];
+            const providers = consumption.serviceType === 'other'
+              ? allProviderOptions
+              : providerOptions[consumption.serviceType] || [];
             return (
               <div key={getConsumptionKey(consumption)} className="border border-gray-200 rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
