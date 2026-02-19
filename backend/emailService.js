@@ -292,7 +292,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
     // Enviar correo usando Gmail SMTP
     console.log('📧 Intentando enviar correo con Gmail SMTP...');
     console.log('📧 Destinatario principal:', toEmail);
-    console.log('📧 CC al creador de la factura:', userEmail);
+    console.log('📧 CC (creador + contabilidad):', userEmail);
     console.log('📧 Asunto:', subject);
     
     try {
@@ -317,11 +317,19 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
         socketTimeout: 10000
       });
       
+      // CC por defecto: contabilidad + copia al creador de la factura
+      const defaultCcEmails = [
+        'contabilidad3@partequipos.com',
+        'contabilidad4@partequipos.com',
+        'analista.contabilidad1@partequipos.com'
+      ];
+      const ccList = [...new Set([userEmail, ...defaultCcEmails])];
+
       // Configurar opciones del correo
       const mailOptions = {
         from: `"Sistema de Gestión de Facturas" <${fromEmail}>`,
         to: toEmail, // Correo principal a fherrera@partequipos.com
-        cc: userEmail, // Copia al creador de la factura
+        cc: ccList, // Copia al creador + contabilidad por defecto
         subject: subject,
         html: htmlContent
       };
@@ -329,7 +337,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log('📧 Enviando correo con Gmail SMTP...');
       console.log('📧 From:', fromEmail);
       console.log('📧 To:', toEmail);
-      console.log('📧 CC:', userEmail);
+      console.log('📧 CC:', ccList.join(', '));
       
       // Enviar correo con timeout manual (25 segundos para evitar errores falsos)
       const sendPromise = transporter.sendMail(mailOptions);
@@ -344,7 +352,7 @@ export const sendNewBillNotification = async (billData, userEmail, userName, att
       console.log(`✅ Correo enviado exitosamente en ${duration}ms`);
       console.log('✅ Message ID:', info.messageId);
       console.log('✅ Enviado a:', toEmail);
-      console.log('✅ Copia enviada a:', userEmail);
+      console.log('✅ Copia enviada a:', ccList.join(', '));
       console.log('✅ Estado: completado');
       
       return { success: true, messageId: info.messageId };
