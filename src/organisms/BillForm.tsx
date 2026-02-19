@@ -244,8 +244,6 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       const numericRegex = /^[0-9.,]+$/;
       if (!numericRegex.test(value)) return;
       value = value.replace(',', '.');
-      const dotCount = (value.match(/\./g) || []).length;
-      if (dotCount > 1) return;
     }
 
     setFormData(prev => {
