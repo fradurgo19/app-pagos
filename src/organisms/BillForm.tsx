@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Plus, Trash2 } from 'lucide-react';
 import { Input } from '../atoms/Input';
@@ -12,8 +12,6 @@ import { validateBillForm, hasValidationErrors, ValidationErrors } from '../util
 import { parseCurrencyInput, getCurrentPeriod, formatCurrency } from '../utils/formatters';
 import { billService } from '../services/billService';
 import { API_URL } from '../config';
-
-type ConsumptionFormItem = UtilityBillFormData['consumptions'][number];
 
 const initialFormData: UtilityBillFormData = {
   description: '',
@@ -50,9 +48,18 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const consumptionKeysRef = useRef(new WeakMap<ConsumptionFormItem, string>());
   const navigate = useNavigate();
   const isEditMode = Boolean(billId);
+
+  const generateRowId = () =>
+    globalThis.crypto?.randomUUID?.() ?? `consumption-${Math.random().toString(36).slice(2, 11)}`;
+
+  const [consumptionRowIds, setConsumptionRowIds] = useState<string[]>(() =>
+    Array.from(
+      { length: (initialData?.consumptions?.length ?? initialFormData.consumptions.length) },
+      generateRowId
+    )
+  );
 
   const serviceTypeOptions = [
     { value: 'electricity', label: 'Electricidad' },
@@ -203,17 +210,6 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
         ) === index
     );
 
-  const getConsumptionKey = (consumption: ConsumptionFormItem): string => {
-    const existingKey = consumptionKeysRef.current.get(consumption);
-    if (existingKey) return existingKey;
-
-    const generatedKey =
-      globalThis.crypto?.randomUUID?.() ??
-      `consumption-${Math.random().toString(36).slice(2, 11)}`;
-    consumptionKeysRef.current.set(consumption, generatedKey);
-    return generatedKey;
-  };
-
   // Obtener proveedores según el tipo de servicio seleccionado
   const updateDescription = (consumptionsData: UtilityBillFormData['consumptions'], contractNumber: string) => {
     const first = consumptionsData[0];
@@ -277,6 +273,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
   };
 
   const addConsumption = () => {
+    setConsumptionRowIds(prev => [...prev, generateRowId()]);
     setFormData(prev => ({
       ...prev,
       consumptions: [
@@ -325,6 +322,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
   };
 
   const removeConsumption = (index: number) => {
+    setConsumptionRowIds(prev => prev.filter((_, i) => i !== index));
     setFormData(prev => {
       const updated = prev.consumptions.filter((_, i) => i !== index);
       const consumptions = updated.length ? updated : prev.consumptions;
@@ -479,7 +477,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
               ? allProviderOptions
               : providerOptions[consumption.serviceType] || [];
             return (
-              <div key={getConsumptionKey(consumption)} className="border border-gray-200 rounded-lg p-4 space-y-4">
+              <div key={consumptionRowIds[idx]} className="border border-gray-200 rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-gray-700">Consumo #{idx + 1}</p>
                   {formData.consumptions.length > 1 && (
