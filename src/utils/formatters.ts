@@ -11,7 +11,7 @@ export const formatCurrency = (value: number | null | undefined): string => {
   } catch (error) {
     console.error('Error formateando moneda:', error);
     // Fallback: formateo manual
-    return `$ ${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
+    return `$ ${value.toString().replaceAll(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
   }
 };
 
@@ -22,7 +22,7 @@ export const formatDate = (date: Date | string | null | undefined): string => {
     const d = typeof date === 'string' ? new Date(date) : date;
     
     // Verificar que la fecha es válida
-    if (isNaN(d.getTime())) return '-';
+    if (Number.isNaN(d.getTime())) return '-';
     
     // Usar toLocaleDateString en lugar de Intl.DateFormat
     return d.toLocaleDateString('es-ES', {
@@ -38,7 +38,7 @@ export const formatDate = (date: Date | string | null | undefined): string => {
 
 export const formatPeriod = (period: string): string => {
   const [year, month] = period.split('-');
-  const date = new Date(parseInt(year), parseInt(month) - 1);
+  const date = new Date(Number.parseInt(year, 10), Number.parseInt(month, 10) - 1);
   return date.toLocaleDateString('es-ES', {
     year: 'numeric',
     month: 'long'
@@ -50,38 +50,44 @@ export const formatPeriod = (period: string): string => {
  * o formato internacional (punto como decimal).
  */
 export const parseColombianNumber = (value: string): number => {
-  if (!value || !value.trim()) return 0;
-  const val = value.trim().replace(/\s/g, '');
+  const val = (value?.trim() ?? '').replaceAll(/\s/g, '');
+  if (!val) return 0;
   if (val.includes(',')) {
     const parts = val.split(',');
-    const intPart = (parts[0] || '0').replace(/\./g, '');
-    const decPart = (parts[1] || '0').replace(/\D/g, '');
-    return parseFloat(intPart + '.' + decPart) || 0;
+    const intPart = (parts[0] || '0').replaceAll('.', '');
+    const decPart = (parts[1] || '0').replaceAll(/\D/g, '');
+    return Number.parseFloat(intPart + '.' + decPart) || 0;
   }
-  const dotIdx = val.indexOf('.');
-  if (dotIdx === -1) return parseFloat(val.replace(/\D/g, '')) || 0;
-  const afterDot = val.substring(dotIdx + 1).replace(/\D/g, '');
-  if (afterDot.length === 3 && /^\d{3}$/.test(afterDot)) {
-    return parseFloat(val.replace(/\./g, '')) || 0;
+  const dotCount = val.match(/\./g)?.length ?? 0;
+  if (dotCount === 0) return Number.parseFloat(val.replaceAll(/\D/g, '')) || 0;
+  if (dotCount >= 1) {
+    const afterLastDot = val.split('.').pop() ?? '';
+    const isThousandsSeparator = afterLastDot.length === 3 && /^\d{3}$/.test(afterLastDot);
+    if (isThousandsSeparator || dotCount > 1) {
+      return Number.parseFloat(val.replaceAll('.', '')) || 0;
+    }
   }
-  return parseFloat(val.replace(/[^0-9.]/g, '')) || 0;
+  return Number.parseFloat(val.replaceAll(/[^0-9.]/g, '')) || 0;
 };
 
 export const parseCurrencyInput = (value: string): number => {
-  if (!value || !value.trim()) return 0;
-  const val = value.trim();
+  const val = value?.trim() ?? '';
+  if (!val) return 0;
   if (val.includes(',')) {
     return parseColombianNumber(val);
   }
-  const dotIdx = val.indexOf('.');
-  if (dotIdx !== -1) {
-    const after = val.substring(dotIdx + 1).replace(/\D/g, '');
+  const dotCount = val.match(/\./g)?.length ?? 0;
+  if (dotCount > 1) {
+    return Number.parseFloat(val.replaceAll('.', '')) || 0;
+  }
+  if (dotCount === 1) {
+    const after = val.substring(val.indexOf('.') + 1).replaceAll(/\D/g, '');
     if (after.length === 3 && /^\d{3}$/.test(after)) {
-      return parseFloat(val.replace(/\./g, '')) || 0;
+      return Number.parseFloat(val.replaceAll('.', '')) || 0;
     }
   }
-  const cleaned = val.replace(/[^0-9.]/g, '');
-  return parseFloat(cleaned) || 0;
+  const cleaned = val.replaceAll(/[^0-9.]/g, '');
+  return Number.parseFloat(cleaned) || 0;
 };
 
 export const formatNumberInput = (value: string): string => {
@@ -114,12 +120,12 @@ export const isOverdue = (dueDate: Date | string | null | undefined): boolean =>
   
   try {
     const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
-    if (isNaN(due.getTime())) return false;
+    if (Number.isNaN(due.getTime())) return false;
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return due < today;
-  } catch (error) {
+  } catch {
     return false;
   }
 };
