@@ -131,14 +131,15 @@ export const ReportsPage: React.FC = () => {
 
   const getServiceTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      electricity: 'Electricidad',
+      electricity: 'Energía',
       water: 'Agua',
       gas: 'Gas',
       internet: 'Internet',
       phone: 'Teléfono',
       cellular: 'Celular',
-      waste: 'Basuras',
+      waste: 'Aseo',
       sewer: 'Alcantarillado',
+      public_lighting: 'Alumbrado Público',
       security: 'Seguridad',
       administration: 'Administración',
       rent: 'Arrendamiento',

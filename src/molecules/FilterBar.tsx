@@ -17,14 +17,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 }) => {
   const serviceTypeOptions = [
     { value: 'all', label: 'Todos los Servicios' },
-    { value: 'electricity', label: 'Electricidad' },
+    { value: 'electricity', label: 'Energía' },
     { value: 'water', label: 'Agua' },
     { value: 'gas', label: 'Gas' },
     { value: 'internet', label: 'Internet' },
     { value: 'phone', label: 'Teléfono' },
     { value: 'cellular', label: 'Celular' },
-    { value: 'waste', label: 'Basuras' },
+    { value: 'waste', label: 'Aseo' },
     { value: 'sewer', label: 'Alcantarillado' },
+    { value: 'public_lighting', label: 'Alumbrado Público' },
     { value: 'security', label: 'Seguridad' },
     { value: 'administration', label: 'Administración' },
     { value: 'rent', label: 'Arrendamiento' },

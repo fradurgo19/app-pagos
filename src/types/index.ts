@@ -1,4 +1,4 @@
-export type ServiceType = 'electricity' | 'water' | 'gas' | 'internet' | 'phone' | 'waste' | 'sewer' | 'cellular' | 'security' | 'administration' | 'rent' | 'other';
+export type ServiceType = 'electricity' | 'water' | 'gas' | 'internet' | 'phone' | 'waste' | 'sewer' | 'cellular' | 'security' | 'administration' | 'rent' | 'public_lighting' | 'other';
 
 export type UnitType = 'kWh' | 'm³' | 'GB' | 'minutes' | 'units' | 'other';
 

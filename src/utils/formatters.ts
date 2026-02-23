@@ -133,14 +133,15 @@ export const isOverdue = (dueDate: Date | string | null | undefined): boolean =>
 // Traducir tipos de servicio a español
 export const translateServiceType = (serviceType: string): string => {
   const translations: Record<string, string> = {
-    'electricity': 'Electricidad',
+    'electricity': 'Energía',
     'water': 'Agua',
     'gas': 'Gas',
     'internet': 'Internet',
     'phone': 'Teléfono',
     'cellular': 'Celular',
-    'waste': 'Basuras',
+    'waste': 'Aseo',
     'sewer': 'Alcantarillado',
+    'public_lighting': 'Alumbrado Público',
     'security': 'Seguridad',
     'administration': 'Administración',
     'rent': 'Arrendamiento',

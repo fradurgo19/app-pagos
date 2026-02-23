@@ -48,7 +48,7 @@ export const useDashboardData = (bills: UtilityBill[], selectedPeriods: string[]
 
     const labels = last6Months.map(period => {
       const [year, month] = period.split('-');
-      const date = new Date(parseInt(year), parseInt(month) - 1);
+      const date = new Date(Number.parseInt(year, 10), Number.parseInt(month, 10) - 1);
       return date.toLocaleDateString('es-ES', { month: 'short' });
     });
 
@@ -58,20 +58,21 @@ export const useDashboardData = (bills: UtilityBill[], selectedPeriods: string[]
   const serviceTypeData = useMemo(() => {
     // Usar las facturas ya filtradas por periodo
     const currentMonthBills = bills;
-    const serviceTypes: ServiceType[] = ['electricity', 'water', 'gas', 'internet', 'phone', 'cellular', 'waste', 'sewer', 'security', 'administration', 'rent', 'other'];
-    
+    const serviceTypes: ServiceType[] = ['electricity', 'water', 'gas', 'internet', 'phone', 'cellular', 'waste', 'sewer', 'security', 'administration', 'rent', 'public_lighting', 'other'];
+
     const serviceLabels: Record<ServiceType, string> = {
-      electricity: 'Electricidad',
+      electricity: 'Energía',
       water: 'Agua',
       gas: 'Gas',
       internet: 'Internet',
       phone: 'Teléfono',
       cellular: 'Celular',
-      waste: 'Basuras',
+      waste: 'Aseo',
       sewer: 'Alcantarillado',
       security: 'Seguridad',
       administration: 'Administración',
       rent: 'Arrendamiento',
+      public_lighting: 'Alumbrado Público',
       other: 'Otro'
     };
 
@@ -95,7 +96,7 @@ export const useDashboardData = (bills: UtilityBill[], selectedPeriods: string[]
       labels: filteredLabels,
       data: filteredData
     };
-  }, [bills, selectedPeriods]);
+  }, [bills]);
 
   const locationData = useMemo(() => {
     // Usar las facturas ya filtradas por periodo
@@ -111,7 +112,7 @@ export const useDashboardData = (bills: UtilityBill[], selectedPeriods: string[]
       labels: Array.from(locationMap.keys()),
       data: Array.from(locationMap.values())
     };
-  }, [bills, selectedPeriods]);
+  }, [bills]);
 
   return { kpis, trendData, serviceTypeData, locationData };
 };

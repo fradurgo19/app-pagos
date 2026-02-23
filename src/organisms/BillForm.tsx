@@ -62,14 +62,15 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
   );
 
   const serviceTypeOptions = [
-    { value: 'electricity', label: 'Electricidad' },
+    { value: 'electricity', label: 'Energía' },
     { value: 'water', label: 'Acueducto' },
     { value: 'gas', label: 'Gas' },
     { value: 'internet', label: 'Internet' },
     { value: 'phone', label: 'Teléfono' },
     { value: 'cellular', label: 'Celular' },
-    { value: 'waste', label: 'Basuras' },
+    { value: 'waste', label: 'Aseo' },
     { value: 'sewer', label: 'Alcantarillado' },
+    { value: 'public_lighting', label: 'Alumbrado Público' },
     { value: 'security', label: 'Seguridad' },
     { value: 'administration', label: 'Administración' },
     { value: 'rent', label: 'Arrendamiento' },
@@ -88,6 +89,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
   const locationOptions = [
     { value: 'ITAGUI CL 30 NRO. 41-30 - REPUESTOS', label: 'ITAGUI CL 30 NRO. 41-30 - REPUESTOS' },
     { value: 'MEDELLIN ALMACEN PALACE. CRA 50 NRO.35-32 - REPUESTOS', label: 'MEDELLIN ALMACEN PALACE. CRA 50 NRO.35-32 - REPUESTOS' },
+    { value: 'MEDELLIN CRA 50 Nro 30 - 12 PALACÉ', label: 'MEDELLIN CRA 50 Nro 30 - 12 PALACÉ' },
     { value: 'CALI CALLE 15 NRO. 38-21 LOCAL 1 y 2 yumbo - REPUESTOS', label: 'CALI CALLE 15 NRO. 38-21 LOCAL 1 y 2 yumbo - REPUESTOS' },
     { value: 'BARRANQUILLA CL 110 NRO.10-427 BODEGA NRO. 8 - REPUESTOS', label: 'BARRANQUILLA CL 110 NRO.10-427 BODEGA NRO. 8 - REPUESTOS' },
     { value: 'BARRANQUILLA CALLE 110 NRO. 10-427 BODEGA NRO. 7 - REPUESTOS', label: 'BARRANQUILLA CALLE 110 NRO. 10-427 BODEGA NRO. 7 - REPUESTOS' },
@@ -112,14 +114,8 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
 
   const providerOptions: Record<ServiceType, Array<{ value: string; label: string }>> = {
     electricity: [
+      { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
       { value: 'Enel Colombia (Codensa)', label: 'Enel Colombia (Codensa) - Bogotá, Cundinamarca, Tolima' },
-      { value: 'EPM', label: 'EPM - Empresas Públicas de Medellín (Antioquia, Córdoba)' },
-      { value: 'EPM - Empresas Públicas de Medellín (Aseo)', label: 'EPM - Empresas Públicas de Medellín (Aseo)' },
-      { value: 'EPM - Empresas Públicas de Medellín (Alumbrado público)', label: 'EPM - Empresas Públicas de Medellín (Alumbrado público)' },
-      { value: 'EPM - Empresas Públicas de Medellín (Acueducto)', label: 'EPM - Empresas Públicas de Medellín (Acueducto)' },
-      { value: 'EPM - Empresas Públicas de Medellín (Alcantarillado)', label: 'EPM - Empresas Públicas de Medellín (Alcantarillado)' },
-      { value: 'EPM - Empresas Públicas de Medellín (Energía)', label: 'EPM - Empresas Públicas de Medellín (Energía)' },
-      { value: 'EPM - Empresas Públicas de Medellín (Otros)', label: 'EPM - Empresas Públicas de Medellín (Otros)' },
       { value: 'Celsia', label: 'Celsia (Valle del Cauca, Tolima, Caribe)' },
       { value: 'CHEC', label: 'CHEC - Central Hidroeléctrica de Caldas (Eje cafetero)' },
       { value: 'Air-e', label: 'Air-e (Atlántico, La Guajira, Magdalena)' },
@@ -140,6 +136,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'IBAL', label: 'IBAL (Ibagué)' }
     ],
     gas: [
+      { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
       { value: 'Vanti', label: 'Vanti (Bogotá, Cundinamarca, Boyacá, Santander)' },
       { value: 'Promigas', label: 'Promigas (Costa Caribe, Valle del Cauca, Cauca)' },
       { value: 'Alcanos', label: 'Alcanos de Colombia (Tolima, Huila, Nariño, Boyacá)' },
@@ -170,6 +167,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'WOM', label: 'WOM (Ciudades principales)' }
     ],
     waste: [
+      { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
       { value: 'Urbaser', label: 'Urbaser (Tunja, Bucaramanga, etc.)' },
       { value: 'Interaseo', label: 'Interaseo (Varias regiones)' },
       { value: 'Emvarias', label: 'Emvarias - Grupo EPM (Medellín y área metropolitana)' },
@@ -195,7 +193,11 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     rent: [
       { value: 'Arrendador', label: 'Arrendador' }
     ],
+    public_lighting: [
+      { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' }
+    ],
     other: [
+      { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
       { value: 'Otro', label: 'Otro proveedor' }
     ]
   };
