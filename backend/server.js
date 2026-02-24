@@ -4,9 +4,9 @@ import pg from 'pg';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 import { sendNewBillNotification, verifyEmailConfig } from './emailService.js';
 import { uploadToSupabase, supabaseDb } from './supabaseClient.js';
 
@@ -57,7 +57,7 @@ const poolConfig = process.env.DATABASE_URL
     }
   : {
       host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '5432'),
+      port: Number.parseInt(process.env.DB_PORT || '5432', 10),
       database: process.env.DB_NAME || 'postgres',
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD,
@@ -98,9 +98,9 @@ const transformConsumptionToFrontend = (row) => ({
   provider: row.provider,
   periodFrom: row.period_from,
   periodTo: row.period_to,
-  value: parseFloat(row.value) || 0,
-  totalAmount: parseFloat(row.total_amount) || 0,
-  consumption: row.consumption ? parseFloat(row.consumption) : null,
+  value: Number.parseFloat(row.value) || 0,
+  totalAmount: Number.parseFloat(row.total_amount) || 0,
+  consumption: row.consumption ? Number.parseFloat(row.consumption) : null,
   unitOfMeasure: row.unit_of_measure,
   createdAt: row.created_at,
   updatedAt: row.updated_at
@@ -113,12 +113,12 @@ const transformBillToFrontend = (row, consumptions = []) => ({
   serviceType: row.service_type,
   provider: row.provider,
   description: row.description,
-  value: parseFloat(row.value) || 0,
+  value: Number.parseFloat(row.value) || 0,
   period: row.period,
   invoiceNumber: row.invoice_number,
   contractNumber: row.contract_number,
-  totalAmount: parseFloat(row.total_amount) || 0,
-  consumption: row.consumption ? parseFloat(row.consumption) : null,
+  totalAmount: Number.parseFloat(row.total_amount) || 0,
+  consumption: row.consumption ? Number.parseFloat(row.consumption) : null,
   unitOfMeasure: row.unit_of_measure,
   costCenter: row.cost_center,
   location: row.location,
@@ -262,10 +262,6 @@ app.post('/api/auth/login', async (req, res) => {
     if (rpcError || !isValid) {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
-
-    const user_id = users.id;
-    const role = users.role;
-    const full_name = users.full_name;
 
     // Datos completos del usuario
     const userData = { rows: [users] };
@@ -471,9 +467,9 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Debe agregar al menos un consumo para la factura' });
     }
 
-    const totalValue = consumptions.reduce((sum, c) => sum + (parseFloat(c.value) || 0), 0);
-    const totalAmount = consumptions.reduce((sum, c) => sum + (parseFloat(c.totalAmount) || 0), 0);
-    const totalConsumption = consumptions.reduce((sum, c) => sum + (parseFloat(c.consumption) || 0), 0);
+    const totalValue = consumptions.reduce((sum, c) => sum + (Number.parseFloat(c.value) || 0), 0);
+    const totalAmount = consumptions.reduce((sum, c) => sum + (Number.parseFloat(c.totalAmount) || 0), 0);
+    const totalConsumption = consumptions.reduce((sum, c) => sum + (Number.parseFloat(c.consumption) || 0), 0);
     const firstConsumption = consumptions[0];
 
     // Normalizar datos (soportar camelCase y snake_case)
@@ -537,9 +533,9 @@ app.post('/api/bills', authenticateToken, async (req, res) => {
       provider: c.provider,
       period_from: c.periodFrom || c.period_from,
       period_to: c.periodTo || c.period_to,
-      value: parseFloat(c.value),
-      total_amount: parseFloat(c.totalAmount),
-      consumption: c.consumption ? parseFloat(c.consumption) : null,
+      value: Number.parseFloat(c.value),
+      total_amount: Number.parseFloat(c.totalAmount),
+      consumption: c.consumption ? Number.parseFloat(c.consumption) : null,
       unit_of_measure: c.unitOfMeasure || c.unit_of_measure
     }));
 
@@ -629,9 +625,9 @@ app.put('/api/bills/:id', authenticateToken, async (req, res) => {
     }
 
     if (incomingConsumptions && incomingConsumptions.length > 0) {
-      const totalValue = incomingConsumptions.reduce((sum, c) => sum + (parseFloat(c.value) || 0), 0);
-      const totalAmount = incomingConsumptions.reduce((sum, c) => sum + (parseFloat(c.totalAmount) || 0), 0);
-      const totalConsumption = incomingConsumptions.reduce((sum, c) => sum + (parseFloat(c.consumption) || 0), 0);
+      const totalValue = incomingConsumptions.reduce((sum, c) => sum + (Number.parseFloat(c.value) || 0), 0);
+      const totalAmount = incomingConsumptions.reduce((sum, c) => sum + (Number.parseFloat(c.totalAmount) || 0), 0);
+      const totalConsumption = incomingConsumptions.reduce((sum, c) => sum + (Number.parseFloat(c.consumption) || 0), 0);
       const first = incomingConsumptions[0];
       updates.serviceType = updates.serviceType || updates.service_type || first?.serviceType;
       updates.provider = updates.provider || first?.provider;
@@ -694,9 +690,9 @@ app.put('/api/bills/:id', authenticateToken, async (req, res) => {
         provider: c.provider,
         period_from: c.periodFrom || c.period_from,
         period_to: c.periodTo || c.period_to,
-        value: parseFloat(c.value),
-        total_amount: parseFloat(c.totalAmount),
-        consumption: c.consumption ? parseFloat(c.consumption) : null,
+        value: Number.parseFloat(c.value),
+        total_amount: Number.parseFloat(c.totalAmount),
+        consumption: c.consumption ? Number.parseFloat(c.consumption) : null,
         unit_of_measure: c.unitOfMeasure || c.unit_of_measure
       }));
 
@@ -745,23 +741,37 @@ app.delete('/api/bills/:id', authenticateToken, async (req, res) => {
 app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
   try {
     const { ids } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ error: 'IDs inválidos' });
     }
 
+    // Garantizar array de strings (UUIDs) para PostgreSQL ANY()
+    const idList = ids.map((id) => (typeof id === 'string' ? id.trim() : String(id))).filter(Boolean);
+    if (idList.length === 0) {
+      return res.status(400).json({ error: 'IDs inválidos' });
+    }
+
     const result = await pool.query(
-      'DELETE FROM utility_bills WHERE id = ANY($1) AND user_id = $2 RETURNING id',
-      [ids, req.user.id]
+      'DELETE FROM utility_bills WHERE id = ANY($1::uuid[]) AND user_id = $2 RETURNING id',
+      [idList, userId]
     );
 
-    res.json({ 
+    res.json({
       message: `${result.rows.length} facturas eliminadas`,
       deletedCount: result.rows.length
     });
   } catch (error) {
-    console.error('Error al eliminar facturas:', error);
-    res.status(500).json({ error: 'Error al eliminar facturas' });
+    console.error('Error al eliminar facturas:', error.message || error, error.code);
+    res.status(500).json({
+      error: 'Error al eliminar facturas',
+      ...(process.env.NODE_ENV !== 'production' && { detail: error.message })
+    });
   }
 });
 
