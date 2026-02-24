@@ -11,10 +11,6 @@ interface BillDetailsModalProps {
 }
 
 export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) => {
-  // Debug: Ver qué datos tiene el bill
-  console.log('🔍 Bill completo en modal:', bill);
-  console.log('🔍 dueDate específicamente:', bill.dueDate);
-
   const primaryConsumption = bill.consumptions && bill.consumptions.length > 0 ? bill.consumptions[0] : null;
   
   return (
@@ -151,14 +147,12 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
                 <p className="font-medium text-gray-900">{bill.costCenter || '-'}</p>
               </div>
               {bill.consumption && (
-                <>
-                  <div>
-                    <p className="text-gray-600">Consumo</p>
-                    <p className="font-medium text-gray-900">
-                      {bill.consumption} {bill.unitOfMeasure || ''}
-                    </p>
-                  </div>
-                </>
+                <div>
+                  <p className="text-gray-600">Consumo</p>
+                  <p className="font-medium text-gray-900">
+                    {bill.consumption} {bill.unitOfMeasure || ''}
+                  </p>
+                </div>
               )}
               <div>
                 <p className="text-gray-600">Creado</p>

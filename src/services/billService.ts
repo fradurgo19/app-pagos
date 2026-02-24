@@ -1,4 +1,4 @@
-import { UtilityBill, FilterOptions, BillStatus } from '../types';
+import { UtilityBill, FilterOptions } from '../types';
 import { authService } from './authService';
 import { API_URL } from '../config';
 
@@ -11,7 +11,7 @@ const getAuthHeaders = () => {
 };
 
 // El backend ya devuelve datos en camelCase correctos, solo casteamos el tipo
-const mapDbRowToBill = (row: any): UtilityBill => row as UtilityBill;
+const mapDbRowToBill = (row: Record<string, unknown>): UtilityBill => row as unknown as UtilityBill;
 
 export const billService = {
   async getAll(filters?: FilterOptions): Promise<UtilityBill[]> {
@@ -32,7 +32,7 @@ export const billService = {
     }
 
     const queryString = params.toString();
-    const url = `${API_URL}/api/bills${queryString ? `?${queryString}` : ''}`;
+    const url = queryString ? `${API_URL}/api/bills?${queryString}` : `${API_URL}/api/bills`;
 
     const response = await fetch(url, {
       headers: getAuthHeaders()
@@ -44,7 +44,6 @@ export const billService = {
     }
 
     const data = await response.json();
-    console.log('📥 Facturas recibidas del backend:', data.length > 0 ? data[0] : 'Sin facturas');
     return data.map(mapDbRowToBill);
   },
 

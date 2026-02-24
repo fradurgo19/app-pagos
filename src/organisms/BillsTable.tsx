@@ -14,6 +14,12 @@ interface BillsTableProps {
   onBillDeleted: () => void;
 }
 
+const SortIcon: React.FC<{ column: keyof UtilityBill; activeColumn: keyof UtilityBill }> = ({ column, activeColumn }) => (
+  <ArrowUpDown
+    className={`w-4 h-4 ml-1 inline ${activeColumn === column ? 'text-[#cf1b22]' : 'text-gray-400'}`}
+  />
+);
+
 export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, onBillDeleted }) => {
   const { profile } = useAuth();
   const [sortState, setSortState] = useState<SortState>({ column: 'createdAt', direction: 'desc' });
@@ -22,12 +28,6 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
   const [viewingBill, setViewingBill] = useState<UtilityBill | null>(null);
 
   const isAreaCoordinator = profile?.role === 'area_coordinator';
-  
-  // Debug: Ver las facturas recibidas
-  if (bills.length > 0) {
-    console.log('🔍 Primera factura en tabla:', bills[0]);
-    console.log('🔍 dueDate de primera factura:', bills[0].dueDate);
-  }
 
   const handleSort = (column: keyof UtilityBill) => {
     setSortState(prev => ({
@@ -43,7 +43,9 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
     if (aVal === undefined || aVal === null) return 1;
     if (bVal === undefined || bVal === null) return -1;
 
-    const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+    let comparison = 0;
+    if (aVal < bVal) comparison = -1;
+    else if (aVal > bVal) comparison = 1;
     return sortState.direction === 'asc' ? comparison : -comparison;
   });
 
@@ -69,14 +71,15 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar esta factura?')) return;
+    if (!globalThis.confirm('¿Estás seguro de que quieres eliminar esta factura?')) return;
 
     setLoading(id);
     try {
       await billService.delete(id);
       onBillDeleted();
-    } catch (error) {
-      alert('Error al eliminar la factura');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar la factura';
+      alert(message);
     } finally {
       setLoading(null);
     }
@@ -84,28 +87,15 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
 
   const handleBulkDelete = async () => {
     if (selectedBills.size === 0) return;
-    if (!window.confirm(`¿Eliminar ${selectedBills.size} facturas seleccionadas?`)) return;
+    if (!globalThis.confirm(`¿Eliminar ${selectedBills.size} facturas seleccionadas?`)) return;
 
     try {
       await billService.bulkDelete(Array.from(selectedBills));
       setSelectedBills(new Set());
       onBillDeleted();
-    } catch (error) {
-      alert('Error al eliminar las facturas');
-    }
-  };
-
-  const handleApprove = async (id: string) => {
-    if (!isAreaCoordinator) return;
-
-    setLoading(id);
-    try {
-      await billService.approve(id);
-      onBillUpdated();
-    } catch (error) {
-      alert('Error al aprobar la factura');
-    } finally {
-      setLoading(null);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al eliminar las facturas';
+      alert(message);
     }
   };
 
@@ -116,20 +106,13 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
     try {
       await billService.updateStatus(id, newStatus);
       onBillUpdated();
-    } catch (error: any) {
-      alert(error.message || 'Error al actualizar el estado de la factura');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar el estado de la factura';
+      alert(message);
     } finally {
       setLoading(null);
     }
   };
-
-  const SortIcon: React.FC<{ column: keyof UtilityBill }> = ({ column }) => (
-    <ArrowUpDown
-      className={`w-4 h-4 ml-1 inline ${
-        sortState.column === column ? 'text-[#cf1b22]' : 'text-gray-400'
-      }`}
-    />
-  );
 
   return (
     <>
@@ -170,13 +153,13 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                 className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('period')}
               >
-                Período <SortIcon column="period" />
+                Período <SortIcon column="period" activeColumn={sortState.column} />
               </th>
               <th
                 className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('serviceType')}
               >
-                Servicio <SortIcon column="serviceType" />
+                Servicio <SortIcon column="serviceType" activeColumn={sortState.column} />
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Proveedor
@@ -188,13 +171,13 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                 className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('totalAmount')}
               >
-                Monto <SortIcon column="totalAmount" />
+                Monto <SortIcon column="totalAmount" activeColumn={sortState.column} />
               </th>
               <th
                 className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('dueDate')}
               >
-                Vencimiento <SortIcon column="dueDate" />
+                Vencimiento <SortIcon column="dueDate" activeColumn={sortState.column} />
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Ubicación
@@ -203,7 +186,7 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
                 className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('status')}
               >
-                Estado <SortIcon column="status" />
+                Estado <SortIcon column="status" activeColumn={sortState.column} />
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                 Acciones
