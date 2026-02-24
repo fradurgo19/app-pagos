@@ -737,7 +737,7 @@ app.delete('/api/bills/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Eliminar múltiples facturas
+// Eliminar múltiples facturas (vía Supabase para evitar SASL/pool en serverless)
 app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
   try {
     const { ids } = req.body;
@@ -751,20 +751,30 @@ app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'IDs inválidos' });
     }
 
-    // Garantizar array de strings (UUIDs) para PostgreSQL ANY()
     const idList = ids.map((id) => (typeof id === 'string' ? id.trim() : String(id))).filter(Boolean);
     if (idList.length === 0) {
       return res.status(400).json({ error: 'IDs inválidos' });
     }
 
-    const result = await pool.query(
-      'DELETE FROM utility_bills WHERE id = ANY($1::uuid[]) AND user_id = $2 RETURNING id',
-      [idList, userId]
-    );
+    const { data: deletedRows, error } = await supabaseDb
+      .from('utility_bills')
+      .delete()
+      .eq('user_id', userId)
+      .in('id', idList)
+      .select('id');
 
+    if (error) {
+      console.error('Error al eliminar facturas (Supabase):', error.message, error.code);
+      return res.status(500).json({
+        error: 'Error al eliminar facturas',
+        ...(process.env.NODE_ENV !== 'production' && { detail: error.message })
+      });
+    }
+
+    const deletedCount = Array.isArray(deletedRows) ? deletedRows.length : 0;
     res.json({
-      message: `${result.rows.length} facturas eliminadas`,
-      deletedCount: result.rows.length
+      message: `${deletedCount} facturas eliminadas`,
+      deletedCount
     });
   } catch (error) {
     console.error('Error al eliminar facturas:', error.message || error, error.code);
