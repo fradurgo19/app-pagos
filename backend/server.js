@@ -738,7 +738,7 @@ app.delete('/api/bills/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Bulk-delete solo con Supabase (en Vercel pg.Client falla con SASL; hace falta SUPABASE_SERVICE_KEY para bypassear RLS)
+// Bulk-delete vía RPC (bulk_delete_utility_bills) para no depender de SUPABASE_SERVICE_KEY
 app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -751,15 +751,13 @@ app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
     const idList = ids.map((id) => (typeof id === 'string' ? id.trim() : String(id))).filter(Boolean);
     if (idList.length === 0) return res.status(400).json({ error: 'IDs inválidos' });
 
-    const { data: deletedRows, error } = await supabaseDb
-      .from('utility_bills')
-      .delete()
-      .eq('user_id', userId)
-      .in('id', idList)
-      .select('id');
+    const { data: deletedRows, error } = await supabaseDb.rpc('bulk_delete_utility_bills', {
+      p_user_id: userId,
+      p_ids: idList
+    });
 
     if (error) {
-      console.error('Error al eliminar facturas (Supabase):', error.message, error.code);
+      console.error('Error al eliminar facturas (RPC):', error.message, error.code);
       return res.status(500).json({
         error: 'Error al eliminar facturas',
         ...(process.env.NODE_ENV !== 'production' && { detail: error.message })
@@ -768,10 +766,8 @@ app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
 
     const deletedCount = Array.isArray(deletedRows) ? deletedRows.length : 0;
     if (deletedCount === 0) {
-      const missingKey = !process.env.SUPABASE_SERVICE_KEY;
-      console.warn('bulk-delete: 0 filas. RLS bloquea delete sin service_role.', missingKey ? 'SUPABASE_SERVICE_KEY no configurada.' : '');
-      return res.status(403).json({
-        error: 'No se pudieron eliminar las facturas. En Vercel agregue SUPABASE_SERVICE_KEY con el secret "service_role" de Supabase (Project Settings → API → service_role).'
+      return res.status(404).json({
+        error: 'No se encontraron facturas para eliminar o no tienes permiso.'
       });
     }
 
