@@ -1,5 +1,5 @@
--- RPC para bulk-delete de facturas: corre con privilegios del definer y evita RLS.
--- Acepta text[] para evitar problemas de tipo uuid[] con el cliente; solo borra si user_id coincide.
+-- Reemplazar RPC para aceptar text[] (más compatible con el cliente)
+DROP FUNCTION IF EXISTS public.bulk_delete_utility_bills(uuid, uuid[]);
 
 CREATE OR REPLACE FUNCTION public.bulk_delete_utility_bills(p_user_id uuid, p_ids text[])
 RETURNS TABLE(deleted_id uuid)
@@ -20,5 +20,3 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.bulk_delete_utility_bills(uuid, text[]) TO anon;
 GRANT EXECUTE ON FUNCTION public.bulk_delete_utility_bills(uuid, text[]) TO authenticated;
-
-COMMENT ON FUNCTION public.bulk_delete_utility_bills(uuid, text[]) IS 'Elimina facturas por IDs solo si pertenecen a p_user_id; para uso del backend sin service_role.';
