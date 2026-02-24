@@ -738,9 +738,9 @@ app.delete('/api/bills/:id', authenticateToken, async (req, res) => {
   }
 });
 
-async function bulkDeleteBillsCount(userId, idList) {
+async function bulkDeleteBillsCount(actorId, idList) {
   const { data: rpcRows, error: rpcError } = await supabaseDb.rpc('bulk_delete_utility_bills', {
-    p_user_id: userId,
+    p_actor_id: actorId,
     p_ids: idList
   });
   if (!rpcError && rpcRows != null && Array.isArray(rpcRows)) return rpcRows.length;
