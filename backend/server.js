@@ -738,40 +738,7 @@ app.delete('/api/bills/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Helper: eliminar facturas por IDs (Postgres directo o Supabase)
-async function bulkDeleteBills(userId, idList) {
-  let deletedCount = 0;
-  if (process.env.DATABASE_URL) {
-    const client = new pg.Client({
-      connectionString: process.env.DATABASE_URL,
-      ssl: isProduction ? { rejectUnauthorized: false } : false
-    });
-    try {
-      await client.connect();
-      const result = await client.query(
-        'DELETE FROM utility_bills WHERE id = ANY($1::uuid[]) AND user_id = $2 RETURNING id',
-        [idList, userId]
-      );
-      deletedCount = result.rowCount ?? 0;
-      await client.end();
-    } catch (err) {
-      await client.end().catch(() => {});
-      console.warn('bulk-delete (pg.Client):', err.message);
-    }
-  }
-  if (deletedCount === 0) {
-    const { data: deletedRows, error } = await supabaseDb
-      .from('utility_bills')
-      .delete()
-      .eq('user_id', userId)
-      .in('id', idList)
-      .select('id');
-    if (error) return { deletedCount: 0, supabaseError: error };
-    deletedCount = Array.isArray(deletedRows) ? deletedRows.length : 0;
-  }
-  return { deletedCount, supabaseError: null };
-}
-
+// Bulk-delete solo con Supabase (en Vercel pg.Client falla con SASL; hace falta SUPABASE_SERVICE_KEY para bypassear RLS)
 app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
   try {
     const userId = req.user?.id;
@@ -784,28 +751,36 @@ app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
     const idList = ids.map((id) => (typeof id === 'string' ? id.trim() : String(id))).filter(Boolean);
     if (idList.length === 0) return res.status(400).json({ error: 'IDs inválidos' });
 
-    const { deletedCount, supabaseError } = await bulkDeleteBills(userId, idList);
+    const { data: deletedRows, error } = await supabaseDb
+      .from('utility_bills')
+      .delete()
+      .eq('user_id', userId)
+      .in('id', idList)
+      .select('id');
 
-    if (supabaseError) {
-      console.error('Error al eliminar facturas (Supabase):', supabaseError.message, supabaseError.code);
+    if (error) {
+      console.error('Error al eliminar facturas (Supabase):', error.message, error.code);
       return res.status(500).json({
         error: 'Error al eliminar facturas',
-        ...(process.env.NODE_ENV !== 'production' && { detail: supabaseError.message })
+        ...(process.env.NODE_ENV !== 'production' && { detail: error.message })
       });
     }
+
+    const deletedCount = Array.isArray(deletedRows) ? deletedRows.length : 0;
     if (deletedCount === 0) {
-      console.warn('bulk-delete: 0 filas eliminadas. Configure DATABASE_URL o SUPABASE_SERVICE_KEY.');
+      const missingKey = !process.env.SUPABASE_SERVICE_KEY;
+      console.warn('bulk-delete: 0 filas. RLS bloquea delete sin service_role.', missingKey ? 'SUPABASE_SERVICE_KEY no configurada.' : '');
       return res.status(403).json({
-        error: 'No se pudieron eliminar las facturas. Configure DATABASE_URL (Postgres) o SUPABASE_SERVICE_KEY en el servidor.'
+        error: 'No se pudieron eliminar las facturas. En Vercel agregue SUPABASE_SERVICE_KEY con el secret "service_role" de Supabase (Project Settings → API → service_role).'
       });
     }
 
     res.json({ message: `${deletedCount} facturas eliminadas`, deletedCount });
-  } catch (error) {
-    console.error('Error al eliminar facturas:', error.message || error, error.code);
+  } catch (err) {
+    console.error('Error al eliminar facturas:', err.message || err, err.code);
     res.status(500).json({
       error: 'Error al eliminar facturas',
-      ...(process.env.NODE_ENV !== 'production' && { detail: error.message })
+      ...(process.env.NODE_ENV !== 'production' && { detail: err.message })
     });
   }
 });

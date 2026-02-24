@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FileText, PlusCircle, LogOut, Receipt, BarChart3, Users } from 'lucide-react';
+import { LayoutDashboard, FileText, PlusCircle, LogOut, BarChart3, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Button } from '../atoms/Button';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
@@ -30,7 +29,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <nav className="bg-gradient-to-r from-[#cf1b22] via-[#a11217] to-[#50504f] border-b border-[#cf1b22]/60 sticky top-0 z-50 shadow-lg backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-18">
           <div className="flex items-center space-x-8">
             <Link to="/" className="flex items-center space-x-3 group">
