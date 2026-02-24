@@ -738,36 +738,43 @@ app.delete('/api/bills/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Bulk-delete vía RPC (bulk_delete_utility_bills) para no depender de SUPABASE_SERVICE_KEY
+async function bulkDeleteBillsCount(userId, idList) {
+  const { data: rpcRows, error: rpcError } = await supabaseDb.rpc('bulk_delete_utility_bills', {
+    p_user_id: userId,
+    p_ids: idList
+  });
+  if (!rpcError && rpcRows != null && Array.isArray(rpcRows)) return rpcRows.length;
+
+  if (rpcError) console.warn('bulk-delete RPC:', rpcError.message, rpcError.code);
+
+  const { data: directRows, error: directError } = await supabaseDb
+    .from('utility_bills')
+    .delete()
+    .eq('user_id', userId)
+    .in('id', idList)
+    .select('id');
+  if (directError) console.warn('bulk-delete direct:', directError.message);
+  if (!directError && directRows != null && Array.isArray(directRows)) return directRows.length;
+
+  return 0;
+}
+
 app.post('/api/bills/bulk-delete', authenticateToken, async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'No autorizado' });
 
     const { ids } = req.body;
-    if (!Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ error: 'IDs inválidos' });
-    }
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'IDs inválidos' });
+
     const idList = ids.map((id) => (typeof id === 'string' ? id.trim() : String(id))).filter(Boolean);
     if (idList.length === 0) return res.status(400).json({ error: 'IDs inválidos' });
 
-    const { data: deletedRows, error } = await supabaseDb.rpc('bulk_delete_utility_bills', {
-      p_user_id: userId,
-      p_ids: idList
-    });
+    const deletedCount = await bulkDeleteBillsCount(userId, idList);
 
-    if (error) {
-      console.error('Error al eliminar facturas (RPC):', error.message, error.code);
-      return res.status(500).json({
-        error: 'Error al eliminar facturas',
-        ...(process.env.NODE_ENV !== 'production' && { detail: error.message })
-      });
-    }
-
-    const deletedCount = Array.isArray(deletedRows) ? deletedRows.length : 0;
     if (deletedCount === 0) {
-      return res.status(404).json({
-        error: 'No se encontraron facturas para eliminar o no tienes permiso.'
+      return res.status(403).json({
+        error: 'No se pudieron eliminar las facturas. Ejecute en Supabase (SQL Editor) la migración 20260225120000_bulk_delete_bills_rpc_text_array.sql o configure SUPABASE_SERVICE_KEY en Vercel.'
       });
     }
 
