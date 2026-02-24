@@ -116,10 +116,13 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     electricity: [
       { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
       { value: 'Enel Colombia (Codensa)', label: 'Enel Colombia (Codensa) - Bogotá, Cundinamarca, Tolima' },
+      { value: 'ENEL COLOMBIA S.A. E.S.P.', label: 'ENEL COLOMBIA S.A. E.S.P.' },
       { value: 'Celsia', label: 'Celsia (Valle del Cauca, Tolima, Caribe)' },
       { value: 'CHEC', label: 'CHEC - Central Hidroeléctrica de Caldas (Eje cafetero)' },
       { value: 'Air-e', label: 'Air-e (Atlántico, La Guajira, Magdalena)' },
+      { value: 'AIR-E S.A.S. (SS PCOS BARRANQUILLA)', label: 'AIR-E S.A.S. (SS PCOS BARRANQUILLA)' },
       { value: 'Afinia', label: 'Afinia - Grupo EPM (Bolívar, Sucre, Cesar, Córdoba, parte de Magdalena)' },
+      { value: 'GRUPO AFINIA EPM CARIBE MAR DE LA COSTA S.A.S. E.S.P.', label: 'GRUPO AFINIA EPM CARIBE MAR DE LA COSTA S.A.S. E.S.P.' },
       { value: 'EMSA', label: 'EMSA - Electrificadora del Meta (Meta)' },
       { value: 'ESSA', label: 'ESSA - Electrificadora de Santander (Santander, Norte de Santander)' },
       { value: 'CEDENAR', label: 'CEDENAR (Nariño)' },
@@ -133,7 +136,8 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'Triple A', label: 'Triple A (Barranquilla y Atlántico)' },
       { value: 'Metroagua', label: 'Metroagua/Veolia (Santa Marta)' },
       { value: 'Aguas de Manizales', label: 'Aguas de Manizales (Manizales)' },
-      { value: 'IBAL', label: 'IBAL (Ibagué)' }
+      { value: 'IBAL', label: 'IBAL (Ibagué)' },
+      { value: 'VEOLIA AGUAS DE MONTERIA S.A. E.S.P.', label: 'VEOLIA AGUAS DE MONTERIA S.A. E.S.P.' }
     ],
     gas: [
       { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
@@ -173,19 +177,25 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'Emvarias', label: 'Emvarias - Grupo EPM (Medellín y área metropolitana)' },
       { value: 'Promoambiental', label: 'Promoambiental Distrito (Zonas de Bogotá)' },
       { value: 'Ciudad Limpia', label: 'Ciudad Limpia (Bogotá, Cali, otros)' },
-      { value: 'Bogotá Limpia', label: 'Bogotá Limpia (Bogotá)' }
+      { value: 'CIUDAD LIMPIA BOGOTA S.A. E.S.P.', label: 'CIUDAD LIMPIA BOGOTA S.A. E.S.P.' },
+      { value: 'Bogotá Limpia', label: 'Bogotá Limpia (Bogotá)' },
+      { value: 'AIR-E S.A.S. (SS PCOS BARRANQUILLA)', label: 'AIR-E S.A.S. (SS PCOS BARRANQUILLA)' },
+      { value: 'GRUPO AFINIA EPM CARIBE MAR DE LA COSTA S.A.S. E.S.P.', label: 'GRUPO AFINIA EPM CARIBE MAR DE LA COSTA S.A.S. E.S.P.' }
     ],
     sewer: [
       { value: 'EAAB', label: 'Empresa de Acueducto y Alcantarillado de Bogotá-ESP' },
       { value: 'EPM', label: 'EPM (Medellín y municipios de Antioquia)' },
       { value: 'EMCALI', label: 'EMCALI (Cali)' },
       { value: 'Acuacar', label: 'Acuacar - Aguas de Cartagena (Cartagena)' },
-      { value: 'Triple A', label: 'Triple A (Barranquilla y Atlántico)' }
+      { value: 'Triple A', label: 'Triple A (Barranquilla y Atlántico)' },
+      { value: 'AIR-E S.A.S. (SS PCOS BARRANQUILLA)', label: 'AIR-E S.A.S. (SS PCOS BARRANQUILLA)' }
     ],
     security: [
       { value: 'Miro', label: 'Miro' },
       { value: 'Prosegur', label: 'Prosegur' },
-      { value: 'Atlas', label: 'Atlas' }
+      { value: 'Atlas', label: 'Atlas' },
+      { value: 'AIR-E S.A.S. (SS PCOS BARRANQUILLA)', label: 'AIR-E S.A.S. (SS PCOS BARRANQUILLA)' },
+      { value: 'GRUPO AFINIA EPM CARIBE MAR DE LA COSTA S.A.S. E.S.P.', label: 'GRUPO AFINIA EPM CARIBE MAR DE LA COSTA S.A.S. E.S.P.' }
     ],
     administration: [
       { value: 'Administración', label: 'Administración' }
@@ -194,7 +204,8 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'Arrendador', label: 'Arrendador' }
     ],
     public_lighting: [
-      { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' }
+      { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
+      { value: 'GRUPO AFINIA EPM CARIBE MAR DE LA COSTA S.A.S. E.S.P.', label: 'GRUPO AFINIA EPM CARIBE MAR DE LA COSTA S.A.S. E.S.P.' }
     ],
     other: [
       { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
