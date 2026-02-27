@@ -133,7 +133,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'EPM', label: 'EPM (Medellín y municipios de Antioquia)' },
       { value: 'EMCALI', label: 'EMCALI (Cali)' },
       { value: 'Acuacar', label: 'Acuacar - Aguas de Cartagena (Cartagena)' },
-      { value: 'Triple A', label: 'Triple A (Barranquilla y Atlántico)' },
+      { value: 'Triple AAA', label: 'Triple AAA (Barranquilla y Atlántico)' },
       { value: 'Metroagua', label: 'Metroagua/Veolia (Santa Marta)' },
       { value: 'Aguas de Manizales', label: 'Aguas de Manizales (Manizales)' },
       { value: 'IBAL', label: 'IBAL (Ibagué)' },
@@ -171,6 +171,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'WOM', label: 'WOM (Ciudades principales)' }
     ],
     waste: [
+      { value: 'Triple AAA', label: 'Triple AAA (Barranquilla y Atlántico)' },
       { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
       { value: 'Urbaser', label: 'Urbaser (Tunja, Bucaramanga, etc.)' },
       { value: 'Interaseo', label: 'Interaseo (Varias regiones)' },
@@ -187,7 +188,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'EPM', label: 'EPM (Medellín y municipios de Antioquia)' },
       { value: 'EMCALI', label: 'EMCALI (Cali)' },
       { value: 'Acuacar', label: 'Acuacar - Aguas de Cartagena (Cartagena)' },
-      { value: 'Triple A', label: 'Triple A (Barranquilla y Atlántico)' },
+      { value: 'Triple AAA', label: 'Triple AAA (Barranquilla y Atlántico)' },
       { value: 'Air-e S.A.S. (SS PCOS Barranquilla)', label: 'Air-e S.A.S. (SS PCOS Barranquilla)' }
     ],
     security: [
