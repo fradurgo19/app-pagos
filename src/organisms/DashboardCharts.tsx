@@ -207,10 +207,14 @@ export const TrendChart: React.FC<TrendChartProps> = ({
   return (
     <ChartCard title="Tendencia de Gastos">
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData}>
+        <LineChart data={chartData} margin={{ top: 20, right: 20, left: 90, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis dataKey="name" stroke="#6b7280" />
-          <YAxis stroke="#6b7280" tickFormatter={(v) => `$${Number(v).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`} />
+          <YAxis
+            width={80}
+            stroke="#6b7280"
+            tickFormatter={(v) => `$${Number(v).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`}
+          />
           <Tooltip
             formatter={(value: number) => [formatCurrency(value), 'Monto']}
             contentStyle={{ border: '1px solid #e5e7eb', borderRadius: '8px' }}
@@ -354,7 +358,7 @@ export const LocationChart: React.FC<LocationChartProps> = ({
       <ResponsiveContainer width="100%" height={300}>
         <BarChart
           data={chartData}
-          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+          margin={{ top: 20, right: 30, left: 90, bottom: 80 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
@@ -366,6 +370,7 @@ export const LocationChart: React.FC<LocationChartProps> = ({
             tick={{ fontSize: 11 }}
           />
           <YAxis
+            width={80}
             stroke="#6b7280"
             tickFormatter={(v) => `$${Number(v).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`}
           />
