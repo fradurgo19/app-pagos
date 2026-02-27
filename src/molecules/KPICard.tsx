@@ -8,6 +8,8 @@ interface KPICardProps {
   change?: number;
   icon: React.ReactNode;
   iconColor: string;
+  compareValue?: string;
+  compareLabel?: string;
 }
 
 export const KPICard: React.FC<KPICardProps> = ({
@@ -15,7 +17,9 @@ export const KPICard: React.FC<KPICardProps> = ({
   value,
   change,
   icon,
-  iconColor
+  iconColor,
+  compareValue,
+  compareLabel
 }) => {
   const isPositive = change !== undefined && change >= 0;
 
@@ -35,11 +39,17 @@ export const KPICard: React.FC<KPICardProps> = ({
               <span className={isPositive ? 'text-[#cf1b22]' : 'text-[#7f0c12]'}>
                 {Math.abs(change).toFixed(1)}%
               </span>
-              <span className="text-gray-600 ml-1">vs last month</span>
+              <span className="text-gray-600 ml-1">vs mes anterior</span>
             </div>
           )}
+          {compareValue !== undefined && compareValue !== '' && (
+            <p className="mt-2 text-sm text-gray-500">
+              {compareLabel ? `${compareLabel}: ` : 'Comparativa: '}
+              <span className="font-medium text-gray-700">{compareValue}</span>
+            </p>
+          )}
         </div>
-        <div className={`p-3 rounded-lg ${iconColor}`}>
+        <div className={`p-3 rounded-lg shrink-0 ${iconColor}`}>
           {icon}
         </div>
       </div>

@@ -6,12 +6,16 @@ interface PeriodSelectorProps {
   availablePeriods: string[];
   selectedPeriods: string[];
   onChange: (periods: string[]) => void;
+  labelClassName?: string;
+  buttonClassName?: string;
 }
 
 export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   availablePeriods,
   selectedPeriods,
-  onChange
+  onChange,
+  labelClassName = 'block text-sm font-medium text-gray-700 mb-1',
+  buttonClassName = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cf1b22] bg-white flex items-center justify-between'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -58,17 +62,20 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor="period-selector-btn" className={labelClassName}>
         Periodos
       </label>
       <button
+        id="period-selector-btn"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cf1b22] bg-white flex items-center justify-between"
+        className={buttonClassName}
+        aria-label="Seleccionar periodos"
+        aria-expanded={isOpen}
       >
         <div className="flex items-center space-x-2">
-          <Calendar className="w-4 h-4 text-gray-500" />
-          <span className="text-sm text-gray-900">{getDisplayText()}</span>
+          <Calendar className="w-4 h-4 shrink-0 text-gray-500" aria-hidden />
+          <span className="text-sm truncate">{getDisplayText()}</span>
         </div>
         <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>

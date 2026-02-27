@@ -77,31 +77,27 @@ export const useDashboardData = (
   }, [bills, allBills, selectedPeriods]);
 
   const trendData = useMemo(() => {
-    const last6Months: string[] = [];
-    const now = new Date();
-
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      last6Months.push(`${year}-${month}`);
+    const periodSet = new Set(allBills.map((b) => b.period).filter(Boolean));
+    const periodsSorted = [...periodSet].sort((a, b) => a.localeCompare(b));
+    if (periodsSorted.length === 0) {
+      return { labels: [] as string[], data: [] as number[], periods: [] as string[] };
     }
 
-    const monthlyTotals = last6Months.map((period) => {
+    const monthlyTotals = periodsSorted.map((period) => {
       const periodBills = allBills.filter((b) => b.period === period);
       return periodBills.reduce((sum, b) => sum + b.totalAmount, 0);
     });
 
-    const labels = last6Months.map((period) => {
+    const labels = periodsSorted.map((period) => {
       const [year, month] = period.split('-');
       const date = new Date(
         Number.parseInt(year, 10),
         Number.parseInt(month, 10) - 1
       );
-      return date.toLocaleDateString('es-ES', { month: 'short' });
+      return date.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
     });
 
-    return { labels, data: monthlyTotals };
+    return { labels, data: monthlyTotals, periods: periodsSorted };
   }, [allBills]);
 
   const serviceTypeData = useMemo(() => {
@@ -155,44 +151,55 @@ export const useDashboardData = (
   }, [bills]);
 
   const locationData = useMemo(() => {
-    const costCenterMap = new Map<
-      string,
-      { totalAmount: number; count: number; units: Set<string> }
-    >();
+    type SedeAggregate = {
+      totalAmount: number;
+      count: number;
+      totalsByUnit: Record<string, number>;
+    };
+    const sedeMap = new Map<string, SedeAggregate>();
 
     bills.forEach((bill) => {
-      const key = bill.costCenter?.trim() || 'Sin centro de costos';
-      const current = costCenterMap.get(key) ?? {
+      const key = bill.location?.trim() || 'Sin sede';
+      const current = sedeMap.get(key) ?? {
         totalAmount: 0,
         count: 0,
-        units: new Set<string>()
+        totalsByUnit: {}
       };
       current.totalAmount += bill.totalAmount ?? 0;
       current.count += 1;
+
       const consumptions = bill.consumptions ?? [];
       if (consumptions.length > 0) {
         consumptions.forEach((c) => {
-          if (c.unitOfMeasure) current.units.add(c.unitOfMeasure);
+          const unit = c.unitOfMeasure ?? '-';
+          const consumption = Number(c.consumption) || 0;
+          current.totalsByUnit[unit] = (current.totalsByUnit[unit] ?? 0) + consumption;
         });
-      } else if (bill.unitOfMeasure) {
-        current.units.add(bill.unitOfMeasure);
+      } else {
+        const unit = bill.unitOfMeasure ?? '-';
+        const consumption = Number(bill.consumption) || 0;
+        current.totalsByUnit[unit] = (current.totalsByUnit[unit] ?? 0) + consumption;
       }
-      costCenterMap.set(key, current);
+      sedeMap.set(key, current);
     });
 
     const labels: string[] = [];
     const data: number[] = [];
     const counts: number[] = [];
-    const units: string[] = [];
+    const unitsSummary: string[] = [];
 
-    costCenterMap.forEach((v, k) => {
+    sedeMap.forEach((v, k) => {
       labels.push(k);
       data.push(v.totalAmount);
       counts.push(v.count);
-      units.push(Array.from(v.units).join(', ') || '-');
+      const parts = Object.entries(v.totalsByUnit)
+        .filter(([, total]) => total > 0)
+        .map(([unit, total]) => `${total.toLocaleString('es-CO')} ${unit}`)
+        .sort((a, b) => a.localeCompare(b));
+      unitsSummary.push(parts.length > 0 ? parts.join(', ') : '-');
     });
 
-    return { labels, data, counts, units };
+    return { labels, data, counts, unitsSummary };
   }, [bills]);
 
   return { kpis, trendData, serviceTypeData, locationData };

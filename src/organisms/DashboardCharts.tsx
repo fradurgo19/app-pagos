@@ -22,6 +22,8 @@ interface ServiceTypeTooltipPayload {
   value: number;
   consumption: number;
   unitOfMeasure: string;
+  compareValue?: number;
+  compareConsumption?: number;
 }
 
 const ServiceTypeTooltipContent: React.FC<{
@@ -37,6 +39,17 @@ const ServiceTypeTooltipContent: React.FC<{
       <p className="text-gray-700">
         Consumo: {Number(p.consumption).toLocaleString('es-CO')} {p.unitOfMeasure || '-'}
       </p>
+      {p.compareValue !== undefined && (
+        <>
+          <p className="text-gray-600 mt-2 pt-2 border-t border-gray-100 text-xs font-medium">Comparativa</p>
+          <p className="text-gray-600 text-xs">Valor: {formatCurrency(p.compareValue)}</p>
+          {p.compareConsumption !== undefined && (
+            <p className="text-gray-600 text-xs">
+              Consumo: {Number(p.compareConsumption).toLocaleString('es-CO')} {p.unitOfMeasure || '-'}
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 };
@@ -45,7 +58,8 @@ interface LocationTooltipPayload {
   fullName: string;
   value: number;
   count: number;
-  unit: string;
+  unitsSummary: string;
+  compareValue?: number;
 }
 
 const LocationTooltipContent: React.FC<{
@@ -59,7 +73,12 @@ const LocationTooltipContent: React.FC<{
       <p className="font-semibold text-gray-900 mb-2 break-words">{p.fullName}</p>
       <p className="text-gray-700">Valor: {formatCurrency(p.value)}</p>
       <p className="text-gray-700">{p.count} factura(s)</p>
-      <p className="text-gray-700">Unidad: {p.unit || '-'}</p>
+      <p className="text-gray-700">Total por unidad de medida: {p.unitsSummary || '-'}</p>
+      {p.compareValue !== undefined && (
+        <p className="text-gray-600 mt-2 pt-2 border-t border-gray-100 text-xs">
+          Comparativa: {formatCurrency(p.compareValue)}
+        </p>
+      )}
     </div>
   );
 };
@@ -78,10 +97,8 @@ function formatConsumptionLabel(
   return `${v.toLocaleString('es-CO')} ${u}`;
 }
 
-function formatCountLabel(value: unknown, payload?: { unit?: string }): string {
-  const count = Number(value);
-  const u = payload?.unit ?? '';
-  return `${count} factura(s) · ${u}`;
+function formatUnitsSummaryLabel(_value: unknown, payload?: { unitsSummary?: string }): string {
+  return payload?.unitsSummary ?? '-';
 }
 
 interface LabelListContentProps {
@@ -90,7 +107,7 @@ interface LabelListContentProps {
   width?: number;
   height?: number;
   value?: unknown;
-  payload?: { unitOfMeasure?: string } | { unit?: string };
+  payload?: { unitOfMeasure?: string } | { unit?: string } | { unitsSummary?: string };
 }
 
 function renderServiceTypeTooltip(props: { active?: boolean; payload?: Array<{ payload: unknown }> }) {
@@ -120,19 +137,22 @@ const ServiceTypeConsumptionLabelContent: React.FC<LabelListContentProps> = (pro
   );
 };
 
-const LocationCountLabelContent: React.FC<LabelListContentProps> = (props) => {
-  const text = formatCountLabel(props.value, props.payload as { unit?: string });
+const LocationUnitsSummaryLabelContent: React.FC<LabelListContentProps> = (props) => {
+  const text = formatUnitsSummaryLabel(props.value, props.payload as { unitsSummary?: string });
+  if (!text || text === '-') return null;
+  const width = props.width ?? 0;
+  if (width < 30) return null;
   return (
     <text
       x={(props.x ?? 0) + (props.width ?? 0) / 2}
       y={(props.y ?? 0) + (props.height ?? 0) / 2}
       dy={4}
       fill="#fff"
-      fontSize={10}
+      fontSize={9}
       fontWeight={600}
       textAnchor="middle"
     >
-      {text}
+      {text.length > 28 ? `${text.slice(0, 25)}…` : text}
     </text>
   );
 };
@@ -163,16 +183,29 @@ const ChartCard: React.FC<ChartCardProps> = ({ title, children }) => (
 interface TrendChartProps {
   labels: string[];
   data: number[];
+  compareLabel?: string;
+  compareData?: number[];
 }
 
-export const TrendChart: React.FC<TrendChartProps> = ({ labels, data }) => {
-  const chartData = labels.map((label, index) => ({
-    name: label,
-    amount: data[index]
-  }));
+export const TrendChart: React.FC<TrendChartProps> = ({
+  labels,
+  data,
+  compareLabel = 'Comparativa',
+  compareData
+}) => {
+  const chartData = labels.map((label, index) => {
+    const point: { name: string; amount: number; compareAmount?: number } = {
+      name: label,
+      amount: data[index] ?? 0
+    };
+    if (compareData?.[index] !== undefined) {
+      point.compareAmount = compareData[index];
+    }
+    return point;
+  });
 
   return (
-    <ChartCard title="Tendencia de Gastos (6 Meses)">
+    <ChartCard title="Tendencia de Gastos">
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -188,9 +221,19 @@ export const TrendChart: React.FC<TrendChartProps> = ({ labels, data }) => {
             dataKey="amount"
             stroke={CHART_COLORS[0]}
             strokeWidth={2}
-            name="Monto Total"
+            name="Periodo principal"
             dot={{ fill: CHART_COLORS[0] }}
           />
+          {compareData && (
+            <Line
+              type="monotone"
+              dataKey="compareAmount"
+              stroke={CHART_COLORS[1]}
+              strokeWidth={2}
+              name={compareLabel}
+              dot={{ fill: CHART_COLORS[1] }}
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </ChartCard>
@@ -200,30 +243,41 @@ export const TrendChart: React.FC<TrendChartProps> = ({ labels, data }) => {
 interface ServiceTypeChartProps {
   items: ServiceTypeDataItem[];
   title?: string;
+  compareItems?: ServiceTypeDataItem[];
+  compareLabel?: string;
 }
 
 export const ServiceTypeChart: React.FC<ServiceTypeChartProps> = ({
   items,
-  title = 'Mes Actual por Tipo de Servicio'
+  title = 'Mes Actual por Tipo de Servicio',
+  compareItems,
+  compareLabel = 'Comparativa'
 }) => {
-  const chartData = items.map((item) => ({
-    name: item.label,
-    value: item.value,
-    consumption: item.consumption,
-    unitOfMeasure: item.unitOfMeasure,
-    labelValue: item.value,
-    labelConsumption: item.consumption
-  }));
+  const chartData = items.map((item, index) => {
+    const compareItem = compareItems?.[index];
+    return {
+      name: item.label,
+      value: item.value,
+      consumption: item.consumption,
+      unitOfMeasure: item.unitOfMeasure,
+      labelValue: item.value,
+      labelConsumption: item.consumption,
+      ...(compareItem && {
+        compareValue: compareItem.value,
+        compareConsumption: compareItem.consumption
+      })
+    };
+  });
 
   const formatValue = (value: number) =>
     value.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
   return (
     <ChartCard title={title}>
-      <ResponsiveContainer width="100%" height={380}>
+      <ResponsiveContainer width="100%" height={420}>
         <BarChart
           data={chartData}
-          margin={{ top: 20, right: 20, left: 20, bottom: 60 }}
+          margin={{ top: 20, right: 20, left: 8, bottom: 60 }}
           layout="vertical"
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -232,10 +286,17 @@ export const ServiceTypeChart: React.FC<ServiceTypeChartProps> = ({
             stroke="#6b7280"
             tickFormatter={(v) => `$${formatValue(Number(v))}`}
           />
-          <YAxis type="category" dataKey="name" width={140} stroke="#6b7280" tick={{ fontSize: 12 }} />
+          <YAxis
+            type="category"
+            dataKey="name"
+            width={200}
+            interval={0}
+            stroke="#6b7280"
+            tick={{ fontSize: 12 }}
+          />
           <Tooltip content={renderServiceTypeTooltip} />
           <Legend />
-          <Bar dataKey="value" name="Valor" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} minPointSize={4}>
+          <Bar dataKey="value" name="Periodo principal" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} minPointSize={4}>
             {chartData.map((entry, index) => (
               <Cell key={`cell-${entry.name}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
             ))}
@@ -251,6 +312,9 @@ export const ServiceTypeChart: React.FC<ServiceTypeChartProps> = ({
               content={<ServiceTypeConsumptionLabelContent />}
             />
           </Bar>
+          {(compareItems?.length ?? 0) > 0 && (
+            <Bar dataKey="compareValue" name={compareLabel} fill={CHART_COLORS[1]} radius={[0, 4, 4, 0]} minPointSize={4} />
+          )}
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>
@@ -261,23 +325,28 @@ interface LocationChartProps {
   labels: string[];
   data: number[];
   counts: number[];
-  units: string[];
+  unitsSummary: string[];
   title?: string;
+  compareData?: number[];
+  compareLabel?: string;
 }
 
 export const LocationChart: React.FC<LocationChartProps> = ({
   labels,
   data,
   counts,
-  units,
-  title = 'Distribución por Centro de Costos'
+  unitsSummary,
+  title = 'Distribución por Sede',
+  compareData,
+  compareLabel = 'Comparativa'
 }) => {
   const chartData = labels.map((label, index) => ({
     name: label.length > 25 ? `${label.slice(0, 22)}...` : label,
     fullName: label,
     value: data[index],
     count: counts[index],
-    unit: units[index]
+    unitsSummary: unitsSummary[index] ?? '-',
+    ...(compareData?.[index] !== undefined && { compareValue: compareData[index] })
   }));
 
   return (
@@ -302,7 +371,7 @@ export const LocationChart: React.FC<LocationChartProps> = ({
           />
           <Tooltip content={renderLocationTooltip} />
           <Legend />
-          <Bar dataKey="value" name="Total valor" radius={[4, 4, 0, 0]} minPointSize={8}>
+          <Bar dataKey="value" name="Periodo principal" radius={[4, 4, 0, 0]} minPointSize={8}>
             {chartData.map((entry, index) => (
               <Cell key={`cell-${entry.fullName}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
             ))}
@@ -315,9 +384,12 @@ export const LocationChart: React.FC<LocationChartProps> = ({
             <LabelList
               dataKey="count"
               position="inside"
-              content={<LocationCountLabelContent />}
+              content={<LocationUnitsSummaryLabelContent />}
             />
           </Bar>
+          {(compareData?.length ?? 0) > 0 && (
+            <Bar dataKey="compareValue" name={compareLabel} fill={CHART_COLORS[1]} radius={[4, 4, 0, 0]} minPointSize={8} />
+          )}
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>
