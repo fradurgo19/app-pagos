@@ -76,11 +76,11 @@ export const QuarterSelector: React.FC<QuarterSelectorProps> = ({
         aria-haspopup="listbox"
       >
         <div className="flex items-center space-x-2">
-          <Calendar className="w-4 h-4 text-gray-500 shrink-0" />
-          <span className="text-sm text-gray-900 truncate">{getDisplayText()}</span>
+          <Calendar className="w-4 h-4 shrink-0 opacity-90" aria-hidden />
+          <span className="text-sm truncate">{getDisplayText()}</span>
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 shrink-0 opacity-90 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           aria-hidden
         />
       </button>

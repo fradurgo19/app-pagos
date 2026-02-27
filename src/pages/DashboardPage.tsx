@@ -5,7 +5,7 @@ import { TrendChart, ServiceTypeChart, LocationChart } from '../organisms/Dashbo
 import { useBills } from '../hooks/useBills';
 import { useDashboardComparison } from '../hooks/useDashboardComparison';
 import { useDashboardFilterOptions } from '../hooks/useDashboardFilterOptions';
-import { formatCurrency, getCurrentPeriod } from '../utils/formatters';
+import { formatCurrency } from '../utils/formatters';
 import { PeriodSelector } from '../components/PeriodSelector';
 import { QuarterSelector } from '../components/QuarterSelector';
 
@@ -25,7 +25,7 @@ function getCompareLabel(comparePeriods: string[]): string {
 /* eslint-disable sonarjs/cognitive-complexity -- Dashboard filters, compare mode and charts require multiple branches */
 export const DashboardPage: React.FC = () => {
   const currentYear = new Date().getFullYear();
-  const [selectedPeriods, setSelectedPeriods] = useState<string[]>([getCurrentPeriod()]);
+  const [selectedPeriods, setSelectedPeriods] = useState<string[]>([]);
   const [selectedQuarters, setSelectedQuarters] = useState<string[]>([]);
   const [yearForQuarters, setYearForQuarters] = useState<number>(currentYear);
   const [locationFilter, setLocationFilter] = useState<string>('all');
