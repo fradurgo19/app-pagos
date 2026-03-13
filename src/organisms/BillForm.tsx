@@ -118,6 +118,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'Enel Colombia (Codensa)', label: 'Enel Colombia (Codensa) - Bogotá, Cundinamarca, Tolima' },
       { value: 'Enel Colombia S.A. E.S.P.', label: 'Enel Colombia S.A. E.S.P.' },
       { value: 'Celsia', label: 'Celsia (Valle del Cauca, Tolima, Caribe)' },
+      { value: 'EMCALI', label: 'EMCALI (Empresas Municipales de Cali E.I.C.E. E.S.P.)' },
       { value: 'CHEC', label: 'CHEC - Central Hidroeléctrica de Caldas (Eje cafetero)' },
       { value: 'Air-e', label: 'Air-e (Atlántico, La Guajira, Magdalena)' },
       { value: 'Air-e S.A.S. (SS PCOS Barranquilla)', label: 'Air-e S.A.S. (SS PCOS Barranquilla)' },
@@ -131,7 +132,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     water: [
       { value: 'EAAB', label: 'Empresa de Acueducto y Alcantarillado de Bogotá-ESP' },
       { value: 'EPM', label: 'EPM (Medellín y municipios de Antioquia)' },
-      { value: 'EMCALI', label: 'EMCALI (Cali)' },
+      { value: 'EMCALI', label: 'EMCALI (Empresas Municipales de Cali E.I.C.E. E.S.P.)' },
       { value: 'Acuacar', label: 'Acuacar - Aguas de Cartagena (Cartagena)' },
       { value: 'Triple AAA', label: 'Triple AAA (Barranquilla y Atlántico)' },
       { value: 'Metroagua', label: 'Metroagua/Veolia (Santa Marta)' },
@@ -173,6 +174,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     waste: [
       { value: 'Triple AAA', label: 'Triple AAA (Barranquilla y Atlántico)' },
       { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
+      { value: 'EMCALI', label: 'EMCALI (Empresas Municipales de Cali E.I.C.E. E.S.P.)' },
       { value: 'Urbaser', label: 'Urbaser (Tunja, Bucaramanga, etc.)' },
       { value: 'Interaseo', label: 'Interaseo (Varias regiones)' },
       { value: 'Emvarias', label: 'Emvarias - Grupo EPM (Medellín y área metropolitana)' },
@@ -186,7 +188,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     sewer: [
       { value: 'EAAB', label: 'Empresa de Acueducto y Alcantarillado de Bogotá-ESP' },
       { value: 'EPM', label: 'EPM (Medellín y municipios de Antioquia)' },
-      { value: 'EMCALI', label: 'EMCALI (Cali)' },
+      { value: 'EMCALI', label: 'EMCALI (Empresas Municipales de Cali E.I.C.E. E.S.P.)' },
       { value: 'Acuacar', label: 'Acuacar - Aguas de Cartagena (Cartagena)' },
       { value: 'Triple AAA', label: 'Triple AAA (Barranquilla y Atlántico)' },
       { value: 'Air-e S.A.S. (SS PCOS Barranquilla)', label: 'Air-e S.A.S. (SS PCOS Barranquilla)' }
