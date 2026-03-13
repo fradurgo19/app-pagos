@@ -38,6 +38,13 @@ const initialFormData: UtilityBillFormData = {
   ]
 };
 
+type SelectOption = { value: string; label: string };
+
+const sortSelectOptions = <T extends SelectOption>(options: T[]): T[] =>
+  [...options].sort((a, b) =>
+    a.label.localeCompare(b.label, 'es', { sensitivity: 'base' })
+  );
+
 export interface BillFormProps {
   billId?: string;
   initialData?: UtilityBillFormData;
@@ -61,7 +68,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     )
   );
 
-  const serviceTypeOptions = [
+  const serviceTypeOptionsRaw = [
     { value: 'electricity', label: 'Energía' },
     { value: 'water', label: 'Acueducto' },
     { value: 'gas', label: 'Gas' },
@@ -76,6 +83,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     { value: 'rent', label: 'Arrendamiento' },
     { value: 'other', label: 'Otro' }
   ];
+  const serviceTypeOptions = sortSelectOptions(serviceTypeOptionsRaw);
 
   const unitOptions = [
     { value: 'kWh', label: 'kWh' },
@@ -112,7 +120,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     { value: 'BARRANQUILLA, CRA 51 NRO.96A-79 ED FENIX - MAQUINARIA (WACONDA)', label: 'BARRANQUILLA, CRA 51 NRO.96A-79 ED FENIX - MAQUINARIA (WACONDA)' }
   ];
 
-  const providerOptions: Record<ServiceType, Array<{ value: string; label: string }>> = {
+  const providerOptionsRaw: Record<ServiceType, Array<{ value: string; label: string }>> = {
     electricity: [
       { value: 'EPM (Empresas Públicas de Medellín)', label: 'EPM (Empresas Públicas de Medellín)' },
       { value: 'Enel Colombia (Codensa)', label: 'Enel Colombia (Codensa) - Bogotá, Cundinamarca, Tolima' },
@@ -215,16 +223,25 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'Otro', label: 'Otro proveedor' }
     ]
   };
+  const providerOptions = (Object.keys(providerOptionsRaw) as ServiceType[]).reduce(
+    (acc, serviceType) => {
+      acc[serviceType] = sortSelectOptions(providerOptionsRaw[serviceType]);
+      return acc;
+    },
+    {} as Record<ServiceType, Array<{ value: string; label: string }>>
+  );
 
-  const allProviderOptions = Object.entries(providerOptions)
-    .filter(([serviceType]) => serviceType !== 'other')
-    .flatMap(([, providers]) => providers)
-    .filter(
-      (provider, index, providersArray) =>
-        providersArray.findIndex(
-          (item) => item.value === provider.value && item.label === provider.label
-        ) === index
-    );
+  const allProviderOptions = sortSelectOptions(
+    Object.entries(providerOptions)
+      .filter(([serviceType]) => serviceType !== 'other')
+      .flatMap(([, providers]) => providers)
+      .filter(
+        (provider, index, providersArray) =>
+          providersArray.findIndex(
+            (item) => item.value === provider.value && item.label === provider.label
+          ) === index
+      )
+  );
 
   // Obtener proveedores según el tipo de servicio seleccionado
   const updateDescription = (consumptionsData: UtilityBillFormData['consumptions'], contractNumber: string) => {
