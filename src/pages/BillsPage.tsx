@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PlusCircle, Download } from 'lucide-react';
-import { Button } from '../atoms/Button';
 import { SearchBar } from '../molecules/SearchBar';
 import { FilterBar } from '../molecules/FilterBar';
 import { BillsTable } from '../organisms/BillsTable';
@@ -46,12 +45,12 @@ export const BillsPage: React.FC = () => {
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+    const url = globalThis.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `bills-export-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
-    window.URL.revokeObjectURL(url);
+    globalThis.URL.revokeObjectURL(url);
   };
 
   if (loading) {
@@ -109,7 +108,7 @@ export const BillsPage: React.FC = () => {
       />
 
       <div className="flex items-center justify-between text-sm text-gray-600">
-        <span>Mostrando {bills.length} factura{bills.length !== 1 ? 's' : ''}</span>
+        <span>Mostrando {bills.length} factura{bills.length === 1 ? '' : 's'}</span>
       </div>
     </div>
   );
