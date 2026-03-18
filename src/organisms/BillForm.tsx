@@ -153,6 +153,7 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       { value: 'Vanti', label: 'Vanti (Bogotá, Cundinamarca, Boyacá, Santander)' },
       { value: 'Promigas', label: 'Promigas (Costa Caribe, Valle del Cauca, Cauca)' },
       { value: 'Alcanos', label: 'Alcanos de Colombia (Tolima, Huila, Nariño, Boyacá)' },
+      { value: 'GASES DEL CARIBE S.A. E.S.P.', label: 'GASES DEL CARIBE S.A. E.S.P.' },
       { value: 'Gases de Occidente', label: 'Gases de Occidente (Valle del Cauca)' },
       { value: 'Surtigas', label: 'Surtigas (Bolívar, Córdoba, Sucre)' },
       { value: 'GdO', label: 'Gas Natural del Oriente - GdO (Santander, Norte de Santander)' }
