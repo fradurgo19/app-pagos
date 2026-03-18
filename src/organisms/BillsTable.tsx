@@ -136,8 +136,8 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
         </div>
       )}
 
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="w-full overflow-x-auto border border-gray-200 rounded-lg">
+        <table className="min-w-[1200px] w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left">
