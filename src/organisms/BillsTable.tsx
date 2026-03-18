@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUpDown, Eye, Trash2, Download } from 'lucide-react';
 import { UtilityBill, SortState } from '../types';
 import { Badge } from '../atoms/Badge';
@@ -26,6 +26,13 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
   const [selectedBills, setSelectedBills] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<string | null>(null);
   const [viewingBill, setViewingBill] = useState<UtilityBill | null>(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(1200);
+  const [showTopScrollbar, setShowTopScrollbar] = useState(false);
+
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const isSyncingScrollRef = useRef(false);
 
   const isAreaCoordinator = profile?.role === 'area_coordinator';
 
@@ -114,6 +121,53 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
     }
   };
 
+  const syncHorizontalScroll = (source: 'top' | 'table') => {
+    if (isSyncingScrollRef.current) return;
+
+    const topScrollEl = topScrollRef.current;
+    const tableScrollEl = tableScrollRef.current;
+    if (!topScrollEl || !tableScrollEl) return;
+
+    isSyncingScrollRef.current = true;
+    if (source === 'top') {
+      tableScrollEl.scrollLeft = topScrollEl.scrollLeft;
+    } else {
+      topScrollEl.scrollLeft = tableScrollEl.scrollLeft;
+    }
+
+    globalThis.requestAnimationFrame(() => {
+      isSyncingScrollRef.current = false;
+    });
+  };
+
+  useEffect(() => {
+    const updateScrollMetrics = () => {
+      const tableEl = tableRef.current;
+      const tableScrollEl = tableScrollRef.current;
+      if (!tableEl || !tableScrollEl) return;
+
+      const nextWidth = tableEl.scrollWidth;
+      setTableScrollWidth(nextWidth);
+      setShowTopScrollbar(nextWidth > tableScrollEl.clientWidth);
+    };
+
+    updateScrollMetrics();
+
+    const tableEl = tableRef.current;
+    let resizeObserver: ResizeObserver | null = null;
+    if (tableEl && 'ResizeObserver' in globalThis) {
+      resizeObserver = new ResizeObserver(updateScrollMetrics);
+      resizeObserver.observe(tableEl);
+    }
+
+    globalThis.addEventListener('resize', updateScrollMetrics);
+
+    return () => {
+      resizeObserver?.disconnect();
+      globalThis.removeEventListener('resize', updateScrollMetrics);
+    };
+  }, [bills.length]);
+
   return (
     <>
       {viewingBill && (
@@ -136,8 +190,23 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
         </div>
       )}
 
-      <div className="w-full overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="min-w-[1200px] w-full divide-y divide-gray-200">
+      <div className="border border-gray-200 rounded-lg">
+        {showTopScrollbar && (
+          <div
+            ref={topScrollRef}
+            className="w-full overflow-x-auto overflow-y-hidden border-b border-gray-200"
+            onScroll={() => syncHorizontalScroll('top')}
+            aria-label="Desplazamiento horizontal superior de la tabla"
+          >
+            <div style={{ width: tableScrollWidth, height: 14 }} />
+          </div>
+        )}
+        <div
+          ref={tableScrollRef}
+          className="w-full overflow-x-auto"
+          onScroll={() => syncHorizontalScroll('table')}
+        >
+        <table ref={tableRef} className="min-w-[1200px] w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left">
@@ -304,6 +373,7 @@ export const BillsTable: React.FC<BillsTableProps> = ({ bills, onBillUpdated, on
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
     </>
