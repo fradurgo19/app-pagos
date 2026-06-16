@@ -85,12 +85,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Triggers para updated_at
+-- Triggers para updated_at (idempotente: se pueden re-ejecutar sin error)
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_utility_bills_updated_at ON utility_bills;
 CREATE TRIGGER update_utility_bills_updated_at
   BEFORE UPDATE ON utility_bills
   FOR EACH ROW
@@ -122,6 +124,50 @@ BEGIN
     AND password_hash = crypt(p_password, password_hash);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Registro de usuario (usa el backend en signup)
+CREATE OR REPLACE FUNCTION register_user(
+  p_email text,
+  p_password text,
+  p_full_name text,
+  p_location text
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id uuid;
+  v_password_hash text;
+BEGIN
+  v_password_hash := crypt(p_password, gen_salt('bf'));
+  INSERT INTO profiles (email, password_hash, full_name, location, role)
+  VALUES (p_email, v_password_hash, p_full_name, p_location, 'basic_user')
+  RETURNING id INTO v_user_id;
+  RETURN v_user_id;
+END;
+$$;
+
+-- Login (usa el backend: rpc check_password)
+CREATE OR REPLACE FUNCTION check_password(user_email text, user_password text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1
+    FROM profiles
+    WHERE email = user_email
+      AND password_hash = crypt(user_password, password_hash)
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION register_user(text, text, text, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION check_password(text, text) TO anon, authenticated;
 
 -- Verificar
 SELECT 'Tablas y funciones creadas exitosamente' as status;

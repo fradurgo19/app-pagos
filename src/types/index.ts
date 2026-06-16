@@ -37,6 +37,8 @@ export interface UtilityBill {
   consumption?: number;
   unitOfMeasure?: UnitType;
   costCenter?: string;
+  city?: string;
+  businessGroup?: string;
   location: string;
   dueDate: Date | string;
   documentUrl?: string;
@@ -56,6 +58,8 @@ export interface UtilityBillFormData {
   invoiceNumber: string;
   contractNumber: string;
   costCenter: string;
+  city: string;
+  businessGroup: string;
   location: string;
   dueDate: string;
   attachedDocument: File | null;

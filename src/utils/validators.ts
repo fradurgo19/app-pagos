@@ -37,6 +37,14 @@ export const validateBillForm = (formData: UtilityBillFormData): ValidationError
     }
   }
 
+  if (!formData.city.trim()) {
+    errors.city = 'La ciudad es requerida';
+  }
+
+  if (!formData.businessGroup.trim()) {
+    errors.businessGroup = 'El grupo empresarial es requerido';
+  }
+
   if (!formData.location.trim()) {
     errors.location = 'La ubicación es requerida';
   }

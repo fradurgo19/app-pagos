@@ -139,6 +139,14 @@ export const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClos
                 <p className="font-medium text-gray-900">{bill.invoiceNumber || '-'}</p>
               </div>
               <div>
+                <p className="text-gray-600">Ciudad</p>
+                <p className="font-medium text-gray-900">{bill.city || '-'}</p>
+              </div>
+              <div>
+                <p className="text-gray-600">Grupo empresarial</p>
+                <p className="font-medium text-gray-900">{bill.businessGroup || '-'}</p>
+              </div>
+              <div>
                 <p className="text-gray-600">Ubicación</p>
                 <p className="font-medium text-gray-900">{bill.location}</p>
               </div>

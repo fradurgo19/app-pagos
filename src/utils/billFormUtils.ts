@@ -1,4 +1,5 @@
 import { UtilityBill, UtilityBillFormData, BillConsumption } from '../types';
+import { resolveBillLocationFromStored } from '../constants/billLocations';
 
 function toDateString(value: Date | string | null | undefined): string {
   if (value === null || value === undefined) return '';
@@ -49,13 +50,21 @@ export function billToFormData(bill: UtilityBill): UtilityBillFormData {
           })
         ];
 
+  const resolved = resolveBillLocationFromStored(
+    bill.location ?? '',
+    bill.city,
+    bill.businessGroup
+  );
+
   return {
     description: bill.description ?? '',
     period: bill.period ?? '',
     invoiceNumber: bill.invoiceNumber ?? '',
     contractNumber: bill.contractNumber ?? '',
     costCenter: bill.costCenter ?? '',
-    location: bill.location ?? '',
+    city: resolved.city,
+    businessGroup: resolved.businessGroup,
+    location: resolved.address,
     dueDate: toDateString(bill.dueDate) ?? '',
     attachedDocument: null,
     status: bill.status,

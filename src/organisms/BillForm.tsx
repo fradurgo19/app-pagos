@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Plus, Trash2 } from 'lucide-react';
 import { Input } from '../atoms/Input';
@@ -12,6 +12,11 @@ import { validateBillForm, hasValidationErrors, ValidationErrors } from '../util
 import { parseCurrencyInput, getCurrentPeriod, formatCurrency } from '../utils/formatters';
 import { billService } from '../services/billService';
 import { API_URL } from '../config';
+import {
+  getBillLocationAddresses,
+  getBillLocationBusinessGroups,
+  getBillLocationCities
+} from '../constants/billLocations';
 
 const initialFormData: UtilityBillFormData = {
   description: '',
@@ -19,6 +24,8 @@ const initialFormData: UtilityBillFormData = {
   invoiceNumber: '',
   contractNumber: '',
   costCenter: 'Administración',
+  city: '',
+  businessGroup: '',
   location: '',
   dueDate: '',
   attachedDocument: null,
@@ -94,31 +101,26 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
     { value: 'other', label: 'Otro' }
   ];
 
-  const locationOptions = [
-    { value: 'ITAGUI CL 30 NRO. 41-30 - REPUESTOS', label: 'ITAGUI CL 30 NRO. 41-30 - REPUESTOS' },
-    { value: 'MEDELLIN ALMACEN PALACE. CRA 50 NRO.35-32 - REPUESTOS', label: 'MEDELLIN ALMACEN PALACE. CRA 50 NRO.35-32 - REPUESTOS' },
-    { value: 'MEDELLIN CRA 50 Nro 30 - 12 PALACÉ', label: 'MEDELLIN CRA 50 Nro 30 - 12 PALACÉ' },
-    { value: 'CALI CALLE 15 NRO. 38-21 LOCAL 1 y 2 yumbo - REPUESTOS', label: 'CALI CALLE 15 NRO. 38-21 LOCAL 1 y 2 yumbo - REPUESTOS' },
-    { value: 'BARRANQUILLA CL 110 NRO.10-427 BODEGA NRO. 8 - REPUESTOS', label: 'BARRANQUILLA CL 110 NRO.10-427 BODEGA NRO. 8 - REPUESTOS' },
-    { value: 'BARRANQUILLA CALLE 110 NRO. 10-427 BODEGA NRO. 7 - REPUESTOS', label: 'BARRANQUILLA CALLE 110 NRO. 10-427 BODEGA NRO. 7 - REPUESTOS' },
-    { value: 'BOGOTA SEDE NUEVA CRA68D Nro.17A - 84 - REPUESTOS', label: 'BOGOTA SEDE NUEVA CRA68D Nro.17A - 84 - REPUESTOS' },
-    { value: 'BOGOTA BODEGA NUEVA CR 80 NRO.16D-54 - REPUESTOS', label: 'BOGOTA BODEGA NUEVA CR 80 NRO.16D-54 - REPUESTOS' },
-    { value: 'SEXTA CALLE 6 NRO. 26 -7 3 BOGOTA - REPUESTOS', label: 'SEXTA CALLE 6 NRO. 26 -7 3 BOGOTA - REPUESTOS' },
-    { value: 'BUCARAMANGA KM 7 VIA GIRON NRO. 4-80 - REPUESTOS', label: 'BUCARAMANGA KM 7 VIA GIRON NRO. 4-80 - REPUESTOS' },
-    { value: 'MQ BOGOTA DG 16 NRO. 96G- 85 - MAQUINARIA', label: 'MQ BOGOTA DG 16 NRO. 96G- 85 - MAQUINARIA' },
-    { value: 'MAQUINARIA GUARNE KM26+800 MTS AUT. MED. B - MAQUINARIA', label: 'MAQUINARIA GUARNE KM26+800 MTS AUT. MED. B - MAQUINARIA' },
-    { value: 'MAQUINARIA GUARNE (CASA NUEVA) VEREDA BELLAVISTA - MAQUINARIA', label: 'MAQUINARIA GUARNE (CASA NUEVA) VEREDA BELLAVISTA - MAQUINARIA' },
-    { value: 'CAUCASIA CRA 20 NRO.3 A - 29 - REPUESTOS', label: 'CAUCASIA CRA 20 NRO.3 A - 29 - REPUESTOS' },
-    { value: 'MONTERIA CRA 17 NRO. 76-94 BOSQUES DE SEVILLA - MAQUINARIA', label: 'MONTERIA CRA 17 NRO. 76-94 BOSQUES DE SEVILLA - MAQUINARIA' },
-    { value: 'EL PORTAL. CALLE 35ASUR NRO. 45B -66 - MAQUINARIA', label: 'EL PORTAL. CALLE 35ASUR NRO. 45B -66 - MAQUINARIA' },
-    { value: 'EL PORTAL. CALLE 35ASUR NRO. 45B -52 - MAQUINARIA', label: 'EL PORTAL. CALLE 35ASUR NRO. 45B -52 - MAQUINARIA' },
-    { value: 'ISTMINA BOMBA ZEUZ LA 70 ALM ERA EN MVTO - REPUESTOS', label: 'ISTMINA BOMBA ZEUZ LA 70 ALM ERA EN MVTO - REPUESTOS' },
-    { value: 'IBAGUE - NO APLICA. EL CANON INCLUYE SS PCOS', label: 'IBAGUE - NO APLICA. EL CANON INCLUYE SS PCOS' },
-    { value: 'CALLE 70 SUR NRO. 43A - 15 INT 2404 CANTO LUNA - MAQUINARIA (WACONDA)', label: 'CALLE 70 SUR NRO. 43A - 15 INT 2404 CANTO LUNA - MAQUINARIA (WACONDA)' },
-    { value: 'BOGOTA APTO LA RIVIERA CL 23 NRO.72-91 APT 701 - MAQUINARIA (WACONDA)', label: 'BOGOTA APTO LA RIVIERA CL 23 NRO.72-91 APT 701 - MAQUINARIA (WACONDA)' },
-    { value: 'CARTAGENA, CRA 18 NRO. 24 45 APTO 703 - FLOR VELASQUEZ. (WACONDA)', label: 'CARTAGENA, CRA 18 NRO. 24 45 APTO 703 - FLOR VELASQUEZ. (WACONDA)' },
-    { value: 'BARRANQUILLA, CRA 51 NRO.96A-79 ED FENIX - MAQUINARIA (WACONDA)', label: 'BARRANQUILLA, CRA 51 NRO.96A-79 ED FENIX - MAQUINARIA (WACONDA)' }
-  ];
+  const cityOptions = useMemo(
+    () => getBillLocationCities().map((city) => ({ value: city, label: city })),
+    []
+  );
+
+  const businessGroupOptions = useMemo(() => {
+    if (!formData.city) return [];
+    return getBillLocationBusinessGroups(formData.city).map((group) => ({
+      value: group,
+      label: group
+    }));
+  }, [formData.city]);
+
+  const locationAddressOptions = useMemo(() => {
+    if (!formData.city || !formData.businessGroup) return [];
+    return getBillLocationAddresses(formData.city, formData.businessGroup).map((entry) => ({
+      value: entry.address,
+      label: entry.address
+    }));
+  }, [formData.city, formData.businessGroup]);
 
   const providerOptionsRaw: Record<ServiceType, Array<{ value: string; label: string }>> = {
     electricity: [
@@ -271,6 +273,36 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
         return newErrors;
       });
     }
+  };
+
+  const handleCityChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      city: value,
+      businessGroup: '',
+      location: ''
+    }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.city;
+      delete next.businessGroup;
+      delete next.location;
+      return next;
+    });
+  };
+
+  const handleBusinessGroupChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      businessGroup: value,
+      location: ''
+    }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.businessGroup;
+      delete next.location;
+      return next;
+    });
   };
 
   const handleConsumptionChange = (index: number, field: keyof UtilityBillFormData['consumptions'][number], value: string) => {
@@ -427,6 +459,8 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
         invoiceNumber: formData.invoiceNumber,
         contractNumber: formData.contractNumber,
         costCenter: formData.costCenter,
+        city: formData.city,
+        businessGroup: formData.businessGroup,
         location: formData.location,
         dueDate: formData.dueDate,
         documentUrl: documentUrl || undefined,
@@ -602,20 +636,42 @@ export const BillForm: React.FC<BillFormProps> = ({ billId, initialData }) => {
       <Card>
         <h2 className="text-xl font-semibold text-gray-900 mb-6">Ubicación y Fecha de Vencimiento</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Centro de Costos"
-            value={formData.costCenter}
-            onChange={(e) => handleInputChange('costCenter', e.target.value)}
-            placeholder="Digita Centro de Costo"
+          <Select
+            label="Ciudad *"
+            value={formData.city}
+            options={cityOptions}
+            onChange={(e) => handleCityChange(e.target.value)}
+            placeholder="Seleccione una ciudad"
+            error={errors.city}
+          />
+
+          <Select
+            label="Grupo empresarial *"
+            value={formData.businessGroup}
+            options={businessGroupOptions}
+            onChange={(e) => handleBusinessGroupChange(e.target.value)}
+            placeholder={formData.city ? 'Seleccione un grupo empresarial' : 'Primero seleccione ciudad'}
+            error={errors.businessGroup}
+            disabled={!formData.city}
           />
 
           <Select
             label="Ubicación *"
             value={formData.location}
-            options={locationOptions}
+            options={locationAddressOptions}
             onChange={(e) => handleInputChange('location', e.target.value)}
-            placeholder="Seleccione una ubicación"
+            placeholder={
+              formData.businessGroup ? 'Seleccione una ubicación' : 'Primero seleccione grupo empresarial'
+            }
             error={errors.location}
+            disabled={!formData.city || !formData.businessGroup}
+          />
+
+          <Input
+            label="Centro de Costos"
+            value={formData.costCenter}
+            onChange={(e) => handleInputChange('costCenter', e.target.value)}
+            placeholder="Digita Centro de Costo"
           />
 
           <Input
