@@ -89,6 +89,16 @@ const fetchConsumptionsByBillIds = async (billIds) => {
 
 // Secret para JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secret-key-muy-seguro-cambiar-en-produccion';
+const AUTH_DISABLED = process.env.AUTH_DISABLED === 'true';
+const AUTH_DISABLED_MESSAGE =
+  'El acceso a esta aplicación provisional ha sido desactivado. Utilice la nueva plataforma.';
+
+const rejectAuthWhenDisabled = (_req, res, next) => {
+  if (AUTH_DISABLED) {
+    return res.status(503).json({ error: AUTH_DISABLED_MESSAGE });
+  }
+  next();
+};
 
 // Función para convertir consumos a camelCase
 const transformConsumptionToFrontend = (row) => ({
@@ -138,6 +148,10 @@ const transformBillToFrontend = (row, consumptions = []) => ({
 
 // Middleware de autenticación
 const authenticateToken = (req, res, next) => {
+  if (AUTH_DISABLED) {
+    return res.status(503).json({ error: AUTH_DISABLED_MESSAGE });
+  }
+
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -159,7 +173,7 @@ const authenticateToken = (req, res, next) => {
 // ============================================
 
 // Registro de usuario
-app.post('/api/auth/signup', async (req, res) => {
+app.post('/api/auth/signup', rejectAuthWhenDisabled, async (req, res) => {
   const { email, password, fullName, location } = req.body;
 
   try {
@@ -228,7 +242,7 @@ app.post('/api/auth/signup', async (req, res) => {
 });
 
 // Login de usuario
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', rejectAuthWhenDisabled, async (req, res) => {
   const { email, password } = req.body;
 
   try {

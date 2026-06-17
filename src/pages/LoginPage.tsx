@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
-import { Card } from '../atoms/Card';
+import { AuthDisabledScreen } from '../components/AuthDisabledScreen';
+import { AUTH_DISABLED } from '../config';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -13,6 +14,10 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+
+  if (AUTH_DISABLED) {
+    return <AuthDisabledScreen />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

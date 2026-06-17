@@ -10,7 +10,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "migrate:supabase": "node scripts/migrate-supabase-data.mjs",
+    "migrate:supabase:storage": "node scripts/migrate-supabase-storage.mjs"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",

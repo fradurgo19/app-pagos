@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../organisms/Navbar';
+import { AUTH_DISABLED } from '../config';
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -18,7 +19,7 @@ export const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ children }) =>
     );
   }
 
-  if (!user) {
+  if (AUTH_DISABLED || !user) {
     return <Navigate to="/login" replace />;
   }
 

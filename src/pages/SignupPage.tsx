@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { Input } from '../atoms/Input';
 import { Button } from '../atoms/Button';
 import { Card } from '../atoms/Card';
+import { AuthDisabledScreen } from '../components/AuthDisabledScreen';
+import { AUTH_DISABLED } from '../config';
 
 export const SignupPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +17,10 @@ export const SignupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
+
+  if (AUTH_DISABLED) {
+    return <AuthDisabledScreen />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

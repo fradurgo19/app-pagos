@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserProfile } from '../types';
 import { authService } from '../services/authService';
+import { AUTH_DISABLED } from '../config';
 
 interface User {
   id: string;
@@ -26,6 +27,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loadProfile = async () => {
     try {
+      if (AUTH_DISABLED) {
+        localStorage.removeItem('auth_token');
+        setProfile(null);
+        setUser(null);
+        return;
+      }
+
       const token = localStorage.getItem('auth_token');
       if (!token) {
         setProfile(null);
