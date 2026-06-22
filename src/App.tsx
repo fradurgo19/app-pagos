@@ -4,6 +4,8 @@ import { AuthProvider } from './context/AuthContext';
 import { AuthLayout } from './templates/AuthLayout';
 import { ProtectedLayout } from './templates/ProtectedLayout';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute';
+import { AuthDisabledScreen } from './components/AuthDisabledScreen';
+import { AUTH_DISABLED } from './config';
 
 // Lazy loading de páginas para mejorar el rendimiento
 const LoginPage = lazy(() => import('./pages/LoginPage').then(module => ({ default: module.LoginPage })));
@@ -23,6 +25,10 @@ const LoadingSpinner = () => (
 );
 
 function App() {
+  if (AUTH_DISABLED) {
+    return <AuthDisabledScreen />;
+  }
+
   return (
     <AuthProvider>
       <BrowserRouter>

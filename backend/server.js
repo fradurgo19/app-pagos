@@ -17,12 +17,33 @@ const __dirname = path.dirname(__filename);
 // Cargar variables de entorno (busca .env en la raíz del proyecto)
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+/** Ver src/config/provisionalApp.ts — misma lógica en frontend */
+const PROVISIONAL_APP_DISABLED_DEFAULT = true;
+
+const parseEnvFlag = (value) => {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return undefined;
+};
+
+const AUTH_DISABLED = parseEnvFlag(process.env.AUTH_DISABLED) ?? PROVISIONAL_APP_DISABLED_DEFAULT;
+const AUTH_DISABLED_MESSAGE =
+  'La aplicación provisional está desactivada. Utilice la nueva plataforma.';
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+app.use((req, res, next) => {
+  if (!AUTH_DISABLED || !req.path.startsWith('/api')) {
+    next();
+    return;
+  }
+  res.status(503).json({ status: 'disabled', error: AUTH_DISABLED_MESSAGE });
+});
 
 // Configurar Multer para upload de archivos en memoria (para Supabase)
 const storage = multer.memoryStorage();
@@ -89,9 +110,6 @@ const fetchConsumptionsByBillIds = async (billIds) => {
 
 // Secret para JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'tu-secret-key-muy-seguro-cambiar-en-produccion';
-const AUTH_DISABLED = process.env.AUTH_DISABLED === 'true';
-const AUTH_DISABLED_MESSAGE =
-  'El acceso a esta aplicación provisional ha sido desactivado. Utilice la nueva plataforma.';
 
 const rejectAuthWhenDisabled = (_req, res, next) => {
   if (AUTH_DISABLED) {

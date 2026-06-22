@@ -10,10 +10,9 @@ export const AuthDisabledScreen: React.FC = () => (
           <AlertCircle className="w-10 h-10 text-amber-700" aria-hidden="true" />
         </div>
       </div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-3">Acceso desactivado</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-3">Aplicación provisional desactivada</h1>
       <p className="text-gray-600 mb-6">
-        El inicio de sesión en esta aplicación provisional fue desactivado.
-        Utilice la nueva plataforma de gestión de facturas.
+        Esta aplicación ya no está disponible. Utilice la nueva plataforma de gestión de facturas.
       </p>
       {SUNSET_APP_URL ? (
         <a
